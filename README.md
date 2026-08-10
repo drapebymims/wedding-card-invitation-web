@@ -1,113 +1,87 @@
-# Foundation — Project Starter & Reference
+# Wedding Card Invitation Web
 
-The canonical starting point for every new project built from here on. It packages the
-architecture, skills, context files, templates, and workflows that have been proven across
-our live projects into one repo you can copy, adapt, and deploy from.
+A **resellable digital wedding invitation platform**. One codebase + one backend,
+many couples: each couple gets their own beautiful invitation site at
+`/w/<slug>` by adding a single config file and rebuilding once.
 
-**Provenance:** synthesized from four production repos that share one template lineage —
-`drape-by-mims` (Next.js storefront + Serverless + RDS + Sanity), `Bees` (React Native
-learning app, 10 microservices, GitHub Actions), `BGAM` (Vue/Vite F&B ordering app), and
-`sinar-automotif` (Next.js static-export showroom; the most evolved revision of the
-template). See [docs/reference-map.md](docs/reference-map.md) for what each contributes.
+Built from the foundation monorepo template: Next.js static export frontend,
+Serverless Python backend, RDS Postgres, Cognito admin auth, Amplify hosting.
 
-## The pattern in one diagram
+## The product model (how you sell it)
 
-```
-Client (Next.js static export | Vite SPA | React Native/Expo)
-        │
-        ▼
-Amplify / CloudFront (frontend hosting)
-        │
-        ▼
-API Gateway (REST, /dev and /prod stages)
-        │
-┌───────┴──────────┐
-│ Lambda functions │  ← Serverless Framework, Python 3.12
-│ (public / auth / │
-│  admin handlers) │
-└───────┬──────────┘
-        │ shared Lambda layer (wedding-card-invitation-web_common)
-        ▼
-RDS Postgres  ←  S3 buckets  ←  SES / external APIs
-(Secrets Mgr)    (+ CloudFront OAC for assets)
-```
-
-Monorepo skeleton (every new project mirrors this):
-
-```
-<project>/
-├── apps/                    # frontend(s): apps/web (Next.js static export or Vite)
-├── services/<name>-service/ # one Serverless service per domain (Python 3.12)
-├── layers/shared-layers/wedding-card-invitation-web-common-layer/   # shared Lambda layer
-├── infra/terraform/         # RDS, Cognito, S3, IAM (+ numbered SQL migrations)
-├── scripts/                 # seed, test-flow, wait-amplify, scaffold
-├── docs/                    # architecture.md, sop.md, plans, ROADMAP
-├── amplify.yml              # frontend build spec (appRoot: apps/web)
-└── package.json             # npm workspaces + root scripts
-```
-
-## Start a new project (3 steps)
-
-1. **Scaffold the repo:**
-   ```bash
-   ./scripts/scaffold-project.sh my-new-project
-   ```
-   This copies this repo to `../my-new-project`, renames `wedding-card-invitation-web`/`wedding_card_invitation_web_common` placeholders,
-   and prints the next steps.
-
-2. **Follow the project bootstrap skill** (load `@skill bootstrap-project` in your agent):
-   - triage the **project nature** (storefront / dashboard / mobile app / CMS-backed / …)
-   - pick the matching frontend pattern and design language (see `skills/design-system/`)
-   - follow the architecture and SOP
-
-3. **Walk the SOP:** [docs/sop.md](docs/sop.md) takes you from an empty AWS account to a
-   deployed project (Phase A foundation → Phase B backend → Phase C frontend), with the
-   [known pain points](docs/pain-points.md) table read before you start.
-
-## What's in this repo
-
-| Path | What it is |
+| Step | What you do |
 |---|---|
-| `docs/architecture.md` | The canonical architecture blueprint (enhanced across all 4 projects) |
-| `docs/sop.md` | Standard operating procedure: empty account → deployed project |
-| `docs/conventions.md` | Naming, code style, API contract, env var conventions |
-| `docs/pain-points.md` | Battle-tested failure → prevention table (read before deploying) |
-| `docs/git-workflow.md` | Branching, commits, promotion to live |
-| `docs/reference-map.md` | What each sibling project demonstrates (for consultation) |
-| `skills/project/` | Our workflow skills: `bootstrap-project`, `plan-first`, `api-contract`, `design-style` |
-| `skills/design-system/` | Vendored design-language skills (67, MIT) — pick per project nature |
-| `templates/backend/` | Genericized layer, service, terraform templates + canonical `amplify.yml` |
-| `templates/frontend/` | Frontend quickstart patterns (Next.js static export, Vite, React Native) |
-| `scripts/` | `scaffold-project.sh`, `sync-design-skills.sh`, `test-flow.sh`, `seed.py`, `wait-amplify.sh` |
-| `AGENTS.md` | Agent context/playbook for working in this repo and in derived projects |
-| `.env.example` | Canonical env block (all values are placeholders) |
+| 1. Sell a couple an invitation site | — |
+| 2. Add them | `scripts/add-couple.sh adam-eve` |
+| 3. Fill in `apps/web/config/couples/adam-eve.json` | names, date, venue, gallery, theme… |
+| 4. Deploy | commit + push → one Amplify build serves every couple |
+| 5. Hand over | send them `https://yourdomain.com/w/adam-eve` + the admin login |
 
-## Choosing by project nature
+The backend is multi-tenant by `couple_slug` — **no backend changes per couple**.
+Cost per couple is effectively zero (static files + a few DB rows).
 
-The architecture is deliberately one template, with switches:
+## Features (per couple site)
 
-| Project nature | Frontend | Backend shape |
-|---|---|---|
-| Marketing / catalog / storefront | Next.js **static export** (`output: 'export'`) | public + admin handlers |
-| Web app / dashboard | Vite SPA (or Next.js with client-side filters) | public + auth + admin |
-| Mobile app | React Native / Expo | microservice per domain (Bees pattern) |
-| CMS-backed | static export + CMS seed/backfill scripts | CMS data → Postgres → public API |
+- Envelope "Open Invitation" screen + optional confetti
+- Hero with couple names, date, venue, tagline + photo
+- Live countdown to the big day
+- Story / timeline section
+- Event cards (ceremony / reception) with map links, dress code, add-to-calendar (.ics)
+- Photo gallery with lightbox
+- RSVP form (attendance, guest count, dietary, message) → stored in the backend
+- Guestbook wishes (submitted → moderated → shown)
+- Gift registry (bank accounts + gift messages)
+- Background music toggle
+- WhatsApp / Telegram share + copy-link
+- SEO metadata + Open Graph per couple
+- Malay + English UI (config-driven per couple)
+- **3 themes**: `refined` (classic luxury), `minimal` (modern clean), `vibrant` (tropical fun)
 
-Pick a **design language** for the UI from `skills/design-system/` based on the audience
-(e.g. `bento`/`minimal` for a premium storefront, `enterprise`/`levels` for a conversion
-dashboard, `lingo` for a kids app). The `design-style` project skill walks through this
-choice.
+## Admin dashboard (`/admin`)
 
-## Working in a derived project
+Platform-owner dashboard (Cognito sign-in): RSVP list with attendance filter + CSV
+export, wish moderation (approve/delete), gift list, attendance stats.
 
-Every derived project gets its own `AGENTS.md` (this repo's is the generic version), the
-plan-first gate, and the API contract. Keep the reference docs here in sync with what you
-learn — when a new pain point or pattern surfaces in a live project, codify it back into
-this repo (see [docs/reference-map.md](docs/reference-map.md)).
+## Architecture
 
-## License
+```
+apps/web                              Next.js 16 static export (output: 'export')
+├── app/w/[slug]/page.tsx             per-couple page (generateStaticParams from config)
+├── app/admin/page.tsx                client-only admin dashboard
+├── app/couples/route.ts              build-time /couples.json manifest
+├── config/couples/<slug>.json        THE per-couple source of truth
+├── src/themes/{refined,minimal,vibrant}/   3 themes (CSS-variable tokenized)
+└── src/components/wedding/           shared client components (RSVP, wishes, gallery…)
+services/weddings-service             Serverless Python 3.12 — public + admin APIs
+infra/terraform/migrations/           001_rsvps, 002_wishes, 003_gifts (tenant = couple_slug)
+```
 
-Our own content: proprietary (this is our internal starter). The vendored design skills in
-`skills/design-system/` are **MIT (Copyright (c) 2026 Bergside)** — see
-[skills/design-system/LICENSE](skills/design-system/LICENSE) and
-[skills/VENDORED.md](skills/VENDORED.md).
+Live data (RSVP / wishes / gifts) flows: client component → `src/lib/api.ts` →
+API Gateway → Lambda → Postgres. Everything else bakes at build time.
+
+## Quick start (local dev)
+
+```bash
+# frontend (mock mode on by default — no backend needed)
+cd apps/web && npm install && npm run dev
+# open http://localhost:3000/w/adam-eve  (or /w/sarah-daniel, /w/maya-arif)
+
+# backend tests
+python -m pytest services/weddings-service/tests -q
+```
+
+## Deploy (see docs/sop.md for the full walkthrough)
+
+1. **Backend**: migrations first (`infra/terraform/migrations/`), then layer deploy →
+   bump `WEDDING_CARD_INVITATION_WEB_COMMON_LAYER_ARN` → `serverless deploy --stage dev`
+   in `services/weddings-service/` with the `.env.example` block.
+2. **Frontend**: wire Amplify (root `amplify.yml`, `appRoot: apps/web`), set
+   `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_USE_MOCK=false` +
+   Cognito vars. Push `dev` → poll `scripts/wait-amplify.sh <app-id> dev`.
+3. **Add a couple**: `scripts/add-couple.sh <slug>` → fill config → rebuild.
+
+## Reference docs
+
+- `docs/IMPLEMENTATION_PLAN.md` — architecture + API contract for this project
+- `docs/architecture.md`, `docs/conventions.md`, `docs/pain-points.md`, `docs/sop.md`
+- `skills/design-system/` — vendored design languages (themes load `refined`/`minimal`/`vibrant`)

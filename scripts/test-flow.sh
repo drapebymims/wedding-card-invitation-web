@@ -45,7 +45,7 @@ email, password = sys.argv[1], sys.argv[2]
 print(json.dumps({"email": email, "password": password}))
 PY
     )") || fail "POST /auth/login (check ADMIN_EMAIL / ADMIN_PASSWORD)"
-  ADMIN_TOKEN=$(echo "$LOGIN" | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["token"])')
+  ADMIN_TOKEN=$(echo "$LOGIN" | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["IdToken"])')
   [ -n "$ADMIN_TOKEN" ] || fail "no token in /auth/login response"
   pass "admin login"
 elif [ -z "$ADMIN_TOKEN" ]; then
@@ -57,27 +57,48 @@ HEALTH=$(curl -sf "$API/public/health") || fail "GET /public/health"
 echo "$HEALTH" | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d["success"]; print("  success=true, data=", d.get("data"))'
 pass "health"
 
-say "2. Public read (adapt to your domain)"
-# TODO(domain): point this at a real public resource, e.g. GET /catalog.
-#   READ=$(curl -sf "$API/catalog") || fail "GET /catalog"
-#   echo "$READ" | python3 -c 'import sys,json; d=json.load(sys.stdin)["data"]; print("  ", len(d), "records")'
-# Stand-in so the script runs end-to-end before you adapt it:
-curl -sf "$API/public/health" >/dev/null || fail "GET public read endpoint"
-pass "public read reachable"
+say "2. Public RSVP flow"
+COUPLE="${COUPLE_SLUG:-adam-eve}"
+RSVP_NAME="Test $(date +%s)"
+RSVP=$(curl -sf -X POST "$API/public/rsvps" -H 'Content-Type: application/json' \
+  -d "$(python3 - "$COUPLE" "$RSVP_NAME" <<'PY'
+import json, sys
+print(json.dumps({
+  "coupleSlug": sys.argv[1],
+  "guestName": sys.argv[2],
+  "attendance": "yes",
+  "guestsCount": 2,
+  "phone": "6012-000 0000",
+}))
+PY
+  )") || fail "POST /public/rsvps"
+echo "$RSVP" | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d["success"]; print("  rsvp id =", d["data"]["id"])'
+pass "rsvp created"
+
+say "3. Public wishes (post + list)"
+curl -sf -X POST "$API/public/wishes" -H 'Content-Type: application/json' \
+  -d "$(python3 - "$COUPLE" "$RSVP_NAME" <<'PY'
+import json, sys
+print(json.dumps({"coupleSlug": sys.argv[1], "name": sys.argv[2], "message": "Test wish from test-flow.sh"}))
+PY
+  )" >/dev/null || fail "POST /public/wishes"
+WISHES=$(curl -sf "$API/public/wishes?coupleSlug=$COUPLE") || fail "GET /public/wishes"
+echo "$WISHES" | python3 -c 'import sys,json; d=json.load(sys.stdin)["data"]; print("  approved wishes:", len(d))'
+pass "wishes"
 
 if [ -n "$ADMIN_TOKEN" ]; then
-  say "3. Admin resource (adapt to your domain)"
+  say "4. Admin reads"
   AUTH=(-H "Authorization: Bearer $ADMIN_TOKEN")
-  # TODO(domain): replace /admin/orders with your admin list endpoint.
-  QUEUE=$(curl -sf "$API/admin/orders" "${AUTH[@]}") || fail "GET /admin/orders (check ADMIN_TOKEN)"
-  RECORD_ID=$(echo "$QUEUE" | python3 -c 'import sys,json; d=json.load(sys.stdin)["data"]; print(d[0]["id"] if d else "")')
-  if [ -n "$RECORD_ID" ]; then
-    say "4. Status transition (adapt to your domain)"
-    # TODO(domain): replace with your record update endpoint + valid payload.
-    curl -sf -X POST "$API/admin/orders/$RECORD_ID/status" "${AUTH[@]}" \
-      -H 'Content-Type: application/json' -d '{"status":"completed"}' >/dev/null && pass "status -> completed"
+  curl -sf "$API/admin/health" "${AUTH[@]}" >/dev/null || fail "GET /admin/health"
+  STATS=$(curl -sf "$API/admin/rsvps/stats?coupleSlug=$COUPLE" "${AUTH[@]}") || fail "GET /admin/rsvps/stats"
+  echo "$STATS" | python3 -c 'import sys,json; d=json.load(sys.stdin)["data"]; print("  stats:", d)'
+  PENDING=$(curl -sf "$API/admin/wishes?coupleSlug=$COUPLE&status=pending" "${AUTH[@]}") || fail "GET /admin/wishes"
+  WISH_ID=$(echo "$PENDING" | python3 -c 'import sys,json; d=json.load(sys.stdin)["data"]; print(d[0]["id"] if d else "")')
+  if [ -n "$WISH_ID" ]; then
+    curl -sf -X PATCH "$API/admin/wishes/$WISH_ID" "${AUTH[@]}" \
+      -H 'Content-Type: application/json' -d '{"approved":true}' >/dev/null && pass "wish $WISH_ID approved"
   else
-    echo "  (no records visible to admin — skip transitions)"
+    echo "  (no pending wishes — skip approval)"
   fi
 fi
 

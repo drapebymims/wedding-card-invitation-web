@@ -1,0 +1,111 @@
+{
+  "slug": "maya-arif",
+  "theme": "vibrant",
+  "language": "ms",
+  "couple": {
+    "bride": {
+      "name": "Maya",
+      "fullName": "Maya Zahra",
+      "role": "Pengantin Perempuan",
+      "parents": "Anak perempuan kepada Encik & Puan Zahri",
+      "instagram": "maya.zahra",
+      "photo": "https://picsum.photos/seed/maya-bride/600/750"
+    },
+    "groom": {
+      "name": "Arif",
+      "fullName": "Arif Hakim",
+      "role": "Pengantin Lelaki",
+      "parents": "Anak lelaki kepada Tuan Hakim & Puan Salina",
+      "instagram": "arif.hakim",
+      "photo": "https://picsum.photos/seed/arif-groom/600/750"
+    }
+  },
+  "wedding": {
+    "date": "2027-12-11T16:00:00+08:00",
+    "tagline": "Alam yang indah, cinta yang tenang. Kami mengundang anda untuk meraikan detik bahagia kami di tepi pantai Langkawi.",
+    "hashtag": "#MayaArifBeachWedding",
+    "music": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+    "quote": {
+      "ms": "Dan kami jadikan malam dan siang sebagai dua tanda kebesaran-Nya.",
+      "source": "QS. Al-Isra': 12"
+    }
+  },
+  "story": [
+    {
+      "title": "Kami Bertemu",
+      "date": "2020",
+      "description": "Berkenalan di program sukarelawan pembersihan pantai di Pulau Langkawi. Arif terjatuh dari kayak dan Maya menyelamatkannya — itu permulaan segalanya."
+    },
+    {
+      "title": "Jauh & Dekat",
+      "date": "2023",
+      "description": "Hubungan jarak jauh antara KL dan Pulau Pinang mengajar kami erti kesabaran dan kepercayaan. Setiap hujung minggu adalah pengembaraan."
+    },
+    {
+      "title": "Lamaran di Pantai",
+      "date": "2026",
+      "description": "Arif melamar di pantai yang sama tempat kami bertemu, saat matahari terbenam, dengan 100 lilin dan keluarga yang bersembunyi di sebalik pokok kelapa."
+    },
+    {
+      "title": "Hari Kami",
+      "date": "2027",
+      "description": "Pesta di tepi pantai dengan kaki di atas pasir, selamat datang kepada semua yang kami sayangi."
+    }
+  ],
+  "events": [
+    {
+      "name": "Majlis Akad Nikah",
+      "type": "ceremony",
+      "date": "2027-12-11T10:00:00+08:00",
+      "endDate": "2027-12-11T12:00:00+08:00",
+      "venue": "Masjid Al-Hana, Langkawi",
+      "address": "Pantai Cenang, 07000 Langkawi, Kedah",
+      "mapsUrl": "https://maps.google.com/?q=Masjid+Al-Hana+Langkawi",
+      "dressCode": "Melayu moden / baju kurung"
+    },
+    {
+      "name": "Majlis Resepsi Tepi Pantai",
+      "type": "reception",
+      "date": "2027-12-11T16:00:00+08:00",
+      "endDate": "2027-12-11T22:00:00+08:00",
+      "venue": "Tanjung Rhu Beach Resort",
+      "address": "Tanjung Rhu, 07000 Langkawi, Kedah",
+      "mapsUrl": "https://maps.google.com/?q=Tanjung+Rhu+Beach+Resort+Langkawi",
+      "dressCode": "Koktel tropika — warna cerah digalakkan",
+      "note": "Hidangan barat & tempatan. Persembahan bunga api pada 9 malam."
+    }
+  ],
+  "gallery": [
+    { "src": "https://picsum.photos/seed/maya-arif-1/900/1200", "alt": "Pra-perkahwinan di pantai 1" },
+    { "src": "https://picsum.photos/seed/maya-arif-2/900/1200", "alt": "Pra-perkahwinan di pantai 2" },
+    { "src": "https://picsum.photos/seed/maya-arif-3/900/1200", "alt": "Pra-perkahwinan di pantai 3" },
+    { "src": "https://picsum.photos/seed/maya-arif-4/900/1200", "alt": "Pra-perkahwinan di pantai 4" },
+    { "src": "https://picsum.photos/seed/maya-arif-5/900/1200", "alt": "Pra-perkahwinan di pantai 5" },
+    { "src": "https://picsum.photos/seed/maya-arif-6/900/1200", "alt": "Pra-perkahwinan di pantai 6" }
+  ],
+  "gifts": {
+    "accounts": [
+      { "bank": "Bank Islam", "accountNumber": "1202 3344 5566", "holder": "Maya Zahra" },
+      { "bank": "RHB", "accountNumber": "2121 3344 5566", "holder": "Arif Hakim" }
+    ],
+    "message": "Kehadiran anda sudah cukup bermakna. Jika ingin memberi hadiah, kad tunai adalah pilihan terbaik untuk kami."
+  },
+  "rsvp": {
+    "enabled": true,
+    "deadline": "2027-11-25T23:59:00+08:00",
+    "whatsapp": "60123456781",
+    "allowMessage": true
+  },
+  "seo": {
+    "title": "Maya & Arif — 11 Disember 2027",
+    "description": "Undangan perkahwinan Maya Zahra & Arif Hakim di tepi pantai Langkawi pada 11 Disember 2027.",
+    "ogImage": "https://picsum.photos/seed/maya-arif-og/1200/630"
+  },
+  "settings": {
+    "confetti": true,
+    "music": true,
+    "countdown": true,
+    "openAnimation": true,
+    "gallery": true
+  }
+}

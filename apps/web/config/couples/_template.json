@@ -1,0 +1,82 @@
+{
+  "_guide": "Copy this file to config/couples/<slug>.json and fill every field. Delete this _guide key when done. slug must match the filename (no .json). theme: refined | minimal | vibrant. language: ms | en. Dates are ISO 8601 with offset, e.g. 2027-08-14T09:00:00+08:00.",
+  "slug": "couple-slug",
+  "theme": "refined",
+  "language": "ms",
+  "couple": {
+    "bride": {
+      "name": "Short name",
+      "fullName": "Full name",
+      "role": "Pengantin Perempuan",
+      "parents": "Daughter of / Putri kepada",
+      "instagram": "handle-without-at",
+      "photo": "https://example.com/bride.jpg"
+    },
+    "groom": {
+      "name": "Short name",
+      "fullName": "Full name",
+      "role": "Pengantin Lelaki",
+      "parents": "Son of / Putra kepada",
+      "instagram": "handle-without-at",
+      "photo": "https://example.com/groom.jpg"
+    }
+  },
+  "wedding": {
+    "date": "2027-08-14T09:00:00+08:00",
+    "tagline": "Invitation text shown in the hero.",
+    "hashtag": "#CoupleHashtag",
+    "music": "https://example.com/audio.mp3",
+    "quote": {
+      "ms": "Optional verse or quote (Malay)",
+      "en": "Optional verse or quote (English)",
+      "source": "Source, e.g. QS. Ar-Rum: 21"
+    }
+  },
+  "story": [
+    {
+      "title": "How we met",
+      "date": "2019",
+      "description": "A paragraph of the story."
+    }
+  ],
+  "events": [
+    {
+      "name": "Majlis Akad Nikah",
+      "type": "ceremony",
+      "date": "2027-08-14T09:00:00+08:00",
+      "endDate": "2027-08-14T12:00:00+08:00",
+      "venue": "Venue name",
+      "address": "Full address",
+      "mapsUrl": "https://maps.google.com/?q=Venue",
+      "dressCode": "Dress code",
+      "note": "Optional note"
+    }
+  ],
+  "gallery": [
+    { "src": "https://example.com/photo1.jpg", "alt": "Description" }
+  ],
+  "gifts": {
+    "accounts": [
+      { "bank": "Bank Name", "accountNumber": "1234 5678 9012", "holder": "Holder Name" }
+    ],
+    "message": "Gift message shown to guests."
+  },
+  "rsvp": {
+    "enabled": true,
+    "deadline": "2027-08-01T23:59:00+08:00",
+    "whatsapp": "60123456789",
+    "allowMessage": true
+  },
+  "seo": {
+    "title": "Couple — date",
+    "description": "SEO description",
+    "ogImage": "https://example.com/og.jpg"
+  },
+  "settings": {
+    "confetti": true,
+    "music": true,
+    "countdown": true,
+    "openAnimation": true,
+    "gallery": true
+  }
+}

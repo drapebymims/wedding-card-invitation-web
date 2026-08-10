@@ -1,0 +1,101 @@
+{
+  "slug": "sarah-daniel",
+  "theme": "minimal",
+  "language": "en",
+  "couple": {
+    "bride": {
+      "name": "Sarah",
+      "fullName": "Sarah Tan",
+      "role": "The Bride",
+      "parents": "Daughter of Mr. & Mrs. Tan Kok Wai",
+      "instagram": "sarah.tan",
+      "photo": "https://picsum.photos/seed/sarah-bride/600/750"
+    },
+    "groom": {
+      "name": "Daniel",
+      "fullName": "Daniel Wong",
+      "role": "The Groom",
+      "parents": "Son of Mr. & Mrs. Wong Wei Ming",
+      "instagram": "daniel.wong",
+      "photo": "https://picsum.photos/seed/daniel-groom/600/750"
+    }
+  },
+  "wedding": {
+    "date": "2027-11-06T11:00:00+08:00",
+    "tagline": "Together with their families, Sarah & Daniel joyfully invite you to share in the celebration of their marriage.",
+    "hashtag": "#SarahAndDaniel",
+    "music": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    "quote": {
+      "en": "Where there is love, there is life.",
+      "source": "Mahatma Gandhi"
+    }
+  },
+  "story": [
+    {
+      "title": "First Encounter",
+      "date": "2018",
+      "description": "We met at a mutual friend's coffee shop opening in Petaling Jaya. Daniel ordered the same drink as Sarah — a flat white — and the conversation never stopped."
+    },
+    {
+      "title": "Becoming Us",
+      "date": "2022",
+      "description": "After years of late-night calls and weekend road trips, we knew this was it. We moved in together and adopted our cat, Mochi."
+    },
+    {
+      "title": "The Proposal",
+      "date": "2026",
+      "description": "Daniel proposed at the rooftop of our favourite café in Penang, with family photos hidden in the decoration and a ring that had been in his family for generations."
+    },
+    {
+      "title": "The Big Day",
+      "date": "2027",
+      "description": "We cannot wait to celebrate with all of you — the people who made us who we are."
+    }
+  ],
+  "events": [
+    {
+      "name": "Wedding Ceremony & Reception",
+      "type": "reception",
+      "date": "2027-11-06T11:00:00+08:00",
+      "endDate": "2027-11-06T16:00:00+08:00",
+      "venue": "The Saujana Hotel",
+      "address": "Jalan Lapangan Terbang Saujana, 40150 Shah Alam, Selangor",
+      "mapsUrl": "https://maps.google.com/?q=Saujana+Hotel+Shah+Alam",
+      "dressCode": "Cocktail attire — garden shades encouraged",
+      "note": "Doors open at 10:30 AM. Lunch will be served."
+    }
+  ],
+  "gallery": [
+    { "src": "https://picsum.photos/seed/sarah-daniel-1/900/1200", "alt": "Engagement shoot 1" },
+    { "src": "https://picsum.photos/seed/sarah-daniel-2/900/1200", "alt": "Engagement shoot 2" },
+    { "src": "https://picsum.photos/seed/sarah-daniel-3/900/1200", "alt": "Engagement shoot 3" },
+    { "src": "https://picsum.photos/seed/sarah-daniel-4/900/1200", "alt": "Engagement shoot 4" },
+    { "src": "https://picsum.photos/seed/sarah-daniel-5/900/1200", "alt": "Engagement shoot 5" },
+    { "src": "https://picsum.photos/seed/sarah-daniel-6/900/1200", "alt": "Engagement shoot 6" }
+  ],
+  "gifts": {
+    "accounts": [
+      { "bank": "Public Bank", "accountNumber": "3144 5566 7788", "holder": "Sarah Tan" },
+      { "bank": "HSBC", "accountNumber": "0023 4455 6677", "holder": "Daniel Wong" }
+    ],
+    "message": "Your presence is the greatest gift of all. For those who wish to bless us further, any contribution is deeply appreciated."
+  },
+  "rsvp": {
+    "enabled": true,
+    "deadline": "2027-10-20T23:59:00+08:00",
+    "whatsapp": "60123456780",
+    "allowMessage": true
+  },
+  "seo": {
+    "title": "Sarah & Daniel — 6 November 2027",
+    "description": "Wedding invitation of Sarah Tan & Daniel Wong on 6 November 2027 in Shah Alam, Malaysia.",
+    "ogImage": "https://picsum.photos/seed/sarah-daniel-og/1200/630"
+  },
+  "settings": {
+    "confetti": true,
+    "music": true,
+    "countdown": true,
+    "openAnimation": true,
+    "gallery": true
+  }
+}

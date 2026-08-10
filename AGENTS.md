@@ -5,6 +5,30 @@ Short on purpose — only the essentials that were repeatedly re-derived and cau
 friction. Derived projects should copy this and add their own specifics (stack, services,
 gotchas).
 
+## This project — wedding-card-invitation-web (resellable wedding invitation platform)
+
+- **Product model**: ONE codebase + ONE backend, many couples. Each couple = one config
+  file `apps/web/config/couples/<slug>.json` + a unique URL `/w/<slug>`. New couple =
+  `scripts/add-couple.sh <slug>` → fill config → rebuild frontend. Backend needs no change
+  (multi-tenant by `couple_slug`).
+- **Themes**: 3 visual languages in `apps/web/src/themes/{refined,minimal,vibrant}/`,
+  picked per config via `theme`. Theme root is a client component owning opening
+  animation / music / confetti; it composes shared headless components from
+  `apps/web/src/components/wedding/` (contracts in `.../wedding/props.ts`). Themes style
+  themselves through CSS custom properties (see `apps/web/src/app/globals.css`) — never
+  edit globals.css from a theme.
+- **Languages**: configs and UI are bilingual (Malay + English) — UI strings in
+  `apps/web/src/lib/i18n.ts` via `t(key, lang)`; couple-authored content in the config.
+- **Live data** (RSVP, wishes, gifts) is client-side via `apps/web/src/lib/api.ts`
+  (mock-first: `NEXT_PUBLIC_USE_MOCK=true` until the backend deploys). Everything else
+  bakes at build time.
+- **Admin**: `/admin` (client-only) — platform owner manages all couples: RSVP list +
+  CSV, wish moderation, gift list. Signs in via Cognito `USER_PASSWORD_AUTH` directly from
+  the browser and sends the **IdToken** as Bearer (pain point #28).
+- **Couple manifest**: `apps/web/src/app/couples/route.ts` emits `/couples.json` at build
+  time (slug list for the admin couple picker).
+
+
 ## Architecture (30-second map)
 
 - **Backend**: Serverless Framework (Python 3.12) in `services/<name>-service/`. Shared

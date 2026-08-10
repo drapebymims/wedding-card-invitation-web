@@ -34,3 +34,15 @@ output "assets_bucket" {
 output "assets_cdn_domain" {
   value = aws_cloudfront_distribution.assets.domain_name
 }
+
+output "web_bucket" {
+  value = aws_s3_bucket.web.id
+}
+
+output "web_cdn_domain" {
+  value = aws_cloudfront_distribution.web.domain_name
+}
+
+output "web_distribution_id" {
+  value = aws_cloudfront_distribution.web.id
+}

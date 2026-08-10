@@ -1,105 +1,93 @@
-# Service Skeleton — `wedding-card-invitation-web-weddings-service`
+# Wedding Service — `wedding-card-invitation-web-weddings-service`
 
-A single service = three Lambda functions behind one API Gateway stage. Copy
-this directory to `services/weddings-service/`, replace every `weddings` token with
-your domain name (`order`, `core`, `catalog`, …), and fill in the env block.
+Backend for the resellable wedding invitation platform. One Serverless Framework
+service exposing three Lambda functions behind one API Gateway stage:
 
-## What's here
+| Function | Mount path | Auth |
+|---|---|---|
+| `publicHandler` | `/public/{proxy+}` | none — storefront, health, RSVPs, wishes, gifts |
+| `authHandler` | `/auth/{proxy+}` | none — Cognito login/signup |
+| `weddingsHandler` | `/admin/{proxy+}` | `COGNITO_USER_POOLS` authorizer — moderation/admin |
 
-```
-serverless.yml          # 3 functions, gateway CORS, IAM, full env block
-requirements.txt        # psycopg2-binary + boto3 (requests/Pillow live in the layer)
-weddings_module/          # python package with the three handlers
-  handler.py            # authenticated routes  (mounted at /admin/{proxy+})
-  public_handler.py     # public routes        (mounted at /public/{proxy+})
-  auth_handler.py       # Cognito login/signup (mounted at /auth/{proxy+})
-README.md               # this file
-```
+Runtime: Python 3.12, Postgres 16 (`public.rsvps`, `public.wishes`, `public.gifts`).
+Shared code (envelope helpers, DB connection, validation) lives in the
+`wedding-card-invitation-web-common-layer` Lambda layer.
 
-The functions are named `publicHandler`, `authHandler`, and `weddingsHandler` (the
-third is the domain's authenticated entry point — its path `/admin/` is
-conventional; rename freely, e.g. `/catalog/`).
+## Endpoint reference
 
-## The handler pattern (canonical — copy this shape)
-
-Every handler follows the same skeleton. Don't deviate:
-
-```
-def lambda_handler(event, context):
-    try:                                        # 1. top-level try/except
-        http_method = event.get('httpMethod', 'GET')
-        path = event.get('path', '')
-        params = event.get('queryStringParameters') or {}
-        body = json.loads(event.get('body', '{}')) if event.get('body') else {}
-        ...
-        conn = get_connection()                 # 2. connection in try/finally
-        cursor = get_cursor(conn)
-        try:
-            return _route(cursor, conn, http_method, path, body, params)   # 3. dispatch on httpMethod+path
-        finally:
-            close_connection(conn, cursor)      # 4. close in finally (keeps cached conn open)
-    except Exception as e:
-        logger.exception('Unhandled error')     # 5. never leak stack traces to the client
-        return internal_error()
-```
-
-- Route dispatch is plain `if http_method == 'GET' and path == '...'` chains — no
-  framework. Read `params` from query strings, `body` from the JSON event.
-- **Never hand-build a response.** Always return one of the envelope helpers from
-  `wedding_card_invitation_web_common.response` (`success`, `created`, `paginated`, `validation_error`,
-  `not_found`, `unauthorized`, `forbidden`, `conflict`, `internal_error`, `timeout`).
-- Parameterized SQL everywhere (`%(name)s` with `RealDictCursor`). Never f-string
-  SQL with user input.
-- Public routes = no authorizer. Authenticated = `COGNITO_USER_POOLS`. Admin =
-  role-gated **in-app** via `get_user_role`/`get_user_email` — never trust API
-  Gateway claims alone.
-
-## API envelope contract
-
-Every Lambda response is one of these two shapes. **No exceptions.**
+Every response uses the envelope contract — see `docs/conventions.md`:
 
 ```json
-{ "success": true,  "data": { ... }, "error": null, "meta": { "page": 1, "per_page": 20, "total": 137 } }
-{ "success": false, "data": null, "error": { "code": "NOT_FOUND", "message": "Order not found" } }
+{ "success": true,  "data": { ... }, "error": null }
+{ "success": false, "data": null, "error": { "code": "NOT_FOUND", "message": "..." } }
 ```
 
-Error code vocabulary:
+Paginated endpoints return `pagination: {page, items_per_page, total, total_pages}`.
 
-| Code | HTTP | When |
+### Public (no auth)
+
+| Method | Path | Description |
 |---|---|---|
-| `VALIDATION_ERROR` | 400 | Bad input, missing required params |
-| `UNAUTHORIZED` | 401 | No/invalid token |
-| `FORBIDDEN` | 403 | Valid token, wrong role |
-| `NOT_FOUND` | 404 | Resource doesn't exist |
-| `CONFLICT` | 409 | State conflict (duplicate, bad transition) |
-| `INTERNAL_ERROR` | 500 | Unhandled — catch-all, never leak details |
-| `TIMEOUT` | 504 | External call timed out |
+| GET  | `/public/health` | Liveness probe → `{status: 'ok'}` |
+| POST | `/public/rsvps` | Submit RSVP. Body `{coupleSlug, guestName, attendance: 'yes'\|'no', guestsCount?, dietary?, phone?, message?}`. `coupleSlug`/`guestName`/`attendance` required, `guestsCount >= 1` (default 1) → `201 {id}` |
+| GET  | `/public/wishes?coupleSlug=&page=&perPage=` | Paginated **approved** wishes, `created_at DESC` |
+| POST | `/public/wishes` | Submit wish. Body `{coupleSlug, name, message}` → `201 {id}` (stored `approved = FALSE`) |
+| GET  | `/public/gifts?coupleSlug=` | List of **approved** gifts |
+| POST | `/public/gifts` | Submit gift message. Body `{coupleSlug, name, message, item?}` → `201 {id}` (stored `approved = FALSE`) |
 
-Add domain-specific codes sparingly (`STOCK_CONFLICT`, `ORDERING_CLOSED` — see
-BGAM's order-service for real examples).
+> Moderation: wishes/gifts are created unapproved and only surface on the public
+> GET endpoints after an admin approves them via `/admin/wishes/{id}`.
 
-> **Frontends read `data.data.field`.** The axios wrapper unwraps the outer
-> `data`, so components use the inner object directly. Define the contract
-> before wiring the frontend (pain point #7).
+### Admin (`COGNITO_USER_POOLS` authorizer)
+
+| Method | Path | Description |
+|---|---|---|
+| GET   | `/admin/health` | Authenticated liveness probe → `{status: 'ok'}` |
+| GET   | `/admin/rsvps?coupleSlug=&page=&perPage=&attendance=` | Paginated RSVPs, `created_at DESC`; optional `attendance` filter (`yes`/`no`) |
+| GET   | `/admin/rsvps/stats?coupleSlug=` | `{total, confirmed, declined, guests, pending_wishes}` — counts by attendance, `SUM(guests_count)` for confirmed, plus unapproved wishes |
+| GET   | `/admin/wishes?coupleSlug=&status=` | Paginated wishes; `status` ∈ `pending` (default) \| `approved` \| `all` |
+| PATCH | `/admin/wishes/{id}` | Approve/reject. Body `{approved: bool}` → `{id, approved}`; `404` if missing |
+| DELETE| `/admin/wishes/{id}` | Delete a wish → `{id}`; `404` if missing |
+| GET   | `/admin/gifts?coupleSlug=&page=&perPage=` | Paginated gifts |
+| DELETE| `/admin/gifts/{id}` | Delete a gift → `{id}`; `404` if missing |
+
+Path parsing tolerates a trailing slash (`/admin/wishes/123/`). All SQL is
+parameterized (`%(name)s` placeholders) — never f-strings with user input.
+
+## Running tests (local, no AWS)
+
+Tests are pure unit tests: the layer's `get_connection`/`get_cursor`/
+`close_connection` are monkeypatched with an in-memory fake cursor that records
+`execute` calls and returns canned results, so nothing touches AWS or the DB.
+
+```bash
+# from the repo root
+python3 -m pytest services/weddings-service/tests -q
+python3 -m compileall services/weddings-service/weddings_module   # smoke check
+```
+
+`tests/conftest.py` puts both `services/weddings-service` and the layer's
+`python/python` directory on `sys.path` so the handlers import cleanly. Dev-only
+deps live in `requirements-dev.txt` (install with
+`pip install -r services/weddings-service/requirements-dev.txt`).
 
 ## Deploy
 
-```bash
-# 1. env block from .env.example (set GETDB_CONNECTION, COGNITO_*, buckets, SES,
-#    and WEDDING_CARD_INVITATION_WEB_COMMON_LAYER_ARN — the ARN captured after deploying the layer)
-serverless deploy --stage dev
+1. Env block from `.env.example` (`GETDB_CONNECTION`, `COGNITO_*`,
+   `WEDDING_CARD_INVITATION_WEB_COMMON_LAYER_ARN`, buckets, SES).
+2. Migrations applied (see `infra/terraform/migrations/`).
+3. `serverless deploy --stage dev` — use the **global** `serverless` CLI (v3).
+
+## Layout
+
 ```
-
-Use the **global** `serverless` CLI (v3) — `npx serverless` may resolve the wrong
-version (pain point #20).
-
-## Adding a new service
-
-1. Copy this directory: `cp -r services/weddings-service services/<other>-service`.
-2. Rename the package dir `<other>_module` and replace the `weddings` tokens inside
-   `serverless.yml` (function name, `handler:` paths) and the module docstrings.
-3. Pick route prefixes (`/public/`, `/auth/`, `/admin/`) — keep them namespaced
-   so multiple services can coexist on one API Gateway stage.
-4. Redeploy the layer first if the new service needs new utilities there.
-5. Add the new IAM permissions to `provider.iam.role.statements` only if the new
-   service touches resources (S3 buckets, SES) the shared statements don't cover.
+serverless.yml          # 3 functions, gateway CORS, IAM, env block
+weddings_module/
+  handler.py            # admin routes   (/admin/{proxy+})
+  public_handler.py     # public routes  (/public/{proxy+})
+  auth_handler.py       # Cognito login/signup (/auth/{proxy+})
+tests/                  # pytest unit tests (fake cursor/connection)
+requirements.txt        # runtime deps (psycopg2-binary, boto3)
+requirements-dev.txt    # test-only deps (pytest)
+README.md               # this file
+```

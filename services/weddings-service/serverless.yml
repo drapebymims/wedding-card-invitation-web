@@ -48,6 +48,9 @@ provider:
 
   iam:
     role:
+      # Explicit short name — the auto-generated one (service+stage+region+
+      # "lambdaRole") exceeds IAM's 64-char role name limit for this project.
+      name: wedding-card-invitation-web-${opt:stage}-role
       statements:
         - Effect: Allow
           Action:

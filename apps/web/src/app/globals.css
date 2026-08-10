@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/*
+ * Base tokens — every theme overrides these on its own wrapper element
+ * (src/themes/<slug>/theme.css), scoped, so themes never bleed into each other.
+ *
+ * Contract consumed by shared components (src/components/wedding/*):
+ *   --c-primary   --c-secondary   --c-accent
+ *   --c-bg        --c-surface     --c-text    --c-muted
+ *   --font-display  --font-body
+ *   --radius      --shadow        --border
+ */
+:root {
+  --c-primary: #8b5a2b;
+  --c-secondary: #c9a227;
+  --c-accent: #b76e79;
+  --c-bg: #fdfbf7;
+  --c-surface: #ffffff;
+  --c-text: #2b2b2b;
+  --c-muted: #6b6b6b;
+  --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --radius: 0.75rem;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --border: rgba(0, 0, 0, 0.1);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--font-body);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--c-primary) 20%, transparent);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

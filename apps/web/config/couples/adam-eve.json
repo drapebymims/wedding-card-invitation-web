@@ -1,0 +1,111 @@
+{
+  "slug": "adam-eve",
+  "theme": "refined",
+  "language": "ms",
+  "couple": {
+    "bride": {
+      "name": "Eve",
+      "fullName": "Eve Alia",
+      "role": "Pengantin Perempuan",
+      "parents": "Putri daripada Encik & Puan Rahman",
+      "instagram": "eve.alia",
+      "photo": "https://picsum.photos/seed/eve-bride/600/750"
+    },
+    "groom": {
+      "name": "Adam",
+      "fullName": "Adam Hakim",
+      "role": "Pengantin Lelaki",
+      "parents": "Putra daripada Tuan Haji Hakim & Puan Salmah",
+      "instagram": "adam.hakim",
+      "photo": "https://picsum.photos/seed/adam-groom/600/750"
+    }
+  },
+  "wedding": {
+    "date": "2027-08-14T09:00:00+08:00",
+    "tagline": "Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan untukmu pasangan hidup agar kamu merasa tenteram, dan dijadikan-Nya di antaramu rasa kasih dan sayang.",
+    "hashtag": "#AdamEveSelamanya",
+    "music": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    "quote": {
+      "ms": "Sesungguhnya bersama kesulitan itu ada kemudahan.",
+      "source": "QS. Al-Insyirah: 6"
+    }
+  },
+  "story": [
+    {
+      "title": "Pertemuan Pertama",
+      "date": "2019",
+      "description": "Kami bertemu di majlis hantaran saudara sepupu. Adam memulakan perbualan dengan bertanya tentang buku yang sedang Eve baca."
+    },
+    {
+      "title": "Kami Mula Berkenalan",
+      "date": "2021",
+      "description": "Selepas dua tahun berkawan baik, kami memutuskan untuk melangkah lebih serius dan melibatkan keluarga masing-masing."
+    },
+    {
+      "title": "Lamaran",
+      "date": "2026",
+      "description": "Dengan berkat dan restu kedua keluarga, Adam melamar Eve. Semuanya berjalan lancar dan penuh kehangatan."
+    },
+    {
+      "title": "Hari Bahagia",
+      "date": "2027",
+      "description": "Dengan lafaz penuh takzim kami akan disatukan. Semoga menjadi keluarga sakinah, mawaddah, warahmah."
+    }
+  ],
+  "events": [
+    {
+      "name": "Majlis Akad Nikah",
+      "type": "ceremony",
+      "date": "2027-08-14T09:00:00+08:00",
+      "endDate": "2027-08-14T12:00:00+08:00",
+      "venue": "Masjid Al-Falah",
+      "address": "Jalan Ampang, 50450 Kuala Lumpur",
+      "mapsUrl": "https://maps.google.com/?q=Masjid+Al-Falah+Kuala+Lumpur",
+      "dressCode": "Warna lembut / pastel"
+    },
+    {
+      "name": "Majlis Resepsi",
+      "type": "reception",
+      "date": "2027-08-14T13:00:00+08:00",
+      "endDate": "2027-08-14T17:00:00+08:00",
+      "venue": "Dewan Seri Budaya",
+      "address": "Jalan Ampang, 50450 Kuala Lumpur",
+      "mapsUrl": "https://maps.google.com/?q=Dewan+Seri+Budaya+Kuala+Lumpur",
+      "dressCode": "Koktel / semi-formal",
+      "note": "Hidangan tengah hari akan disediakan."
+    }
+  ],
+  "gallery": [
+    { "src": "https://picsum.photos/seed/adam-eve-1/900/1200", "alt": "Pre-wedding shot 1" },
+    { "src": "https://picsum.photos/seed/adam-eve-2/900/1200", "alt": "Pre-wedding shot 2" },
+    { "src": "https://picsum.photos/seed/adam-eve-3/900/1200", "alt": "Pre-wedding shot 3" },
+    { "src": "https://picsum.photos/seed/adam-eve-4/900/1200", "alt": "Pre-wedding shot 4" },
+    { "src": "https://picsum.photos/seed/adam-eve-5/900/1200", "alt": "Pre-wedding shot 5" },
+    { "src": "https://picsum.photos/seed/adam-eve-6/900/1200", "alt": "Pre-wedding shot 6" }
+  ],
+  "gifts": {
+    "accounts": [
+      { "bank": "Maybank", "accountNumber": "5140 1234 5678", "holder": "Eve Alia" },
+      { "bank": "CIMB", "accountNumber": "8601 2345 6789", "holder": "Adam Hakim" }
+    ],
+    "message": "Doa dan restu anda adalah hadiah yang paling berharga bagi kami."
+  },
+  "rsvp": {
+    "enabled": true,
+    "deadline": "2027-08-01T23:59:00+08:00",
+    "whatsapp": "60123456789",
+    "allowMessage": true
+  },
+  "seo": {
+    "title": "Adam & Eve — 14 Ogos 2027",
+    "description": "Undangan perkahwinan Eve Alia & Adam Hakim pada 14 Ogos 2027 di Kuala Lumpur.",
+    "ogImage": "https://picsum.photos/seed/adam-eve-og/1200/630"
+  },
+  "settings": {
+    "confetti": true,
+    "music": true,
+    "countdown": true,
+    "openAnimation": true,
+    "gallery": true
+  }
+}

@@ -1,8 +1,8 @@
 {
-  "name": "foundation",
+  "name": "wedding-card-invitation-web",
   "version": "0.1.0",
   "private": true,
-  "description": "Foundation — canonical AWS monorepo starter: Serverless Python 3.12 lambdas + shared Lambda layer + Terraform (RDS/Cognito/S3) + Amplify-hosted frontend",
+  "description": "Resellable digital wedding invitation platform — one codebase, one backend, many couples (config-per-couple, 3 themes, Malay + English).",
   "//": "Root has no runtime dependencies. serverless-prune-plugin (and any other serverless plugin) lives per-service in that service's own package.json. Prefer the global serverless CLI (v3) over npx — npx may resolve a different version. The project-name placeholders in the deploy: scripts are renamed by scripts/scaffold-project.sh.",
   "workspaces": [
     "apps/web"
@@ -14,5 +14,8 @@
     "preview:web": "npm --workspace apps/web run preview",
     "deploy:layer": "cd layers/shared-layers/wedding-card-invitation-web-common-layer && npx serverless deploy --stage dev",
     "deploy:service": "cd services/weddings-service && npx serverless deploy --stage dev"
+  },
+  "devDependencies": {
+    "serverless-prune-plugin": "^2.1.0"
   }
 }

@@ -1,0 +1,92 @@
+/*
+ * Minimal theme — stripped-back, whitespace-forward, editorial.
+ *
+ * Scoped to .theme-minimal so themes never bleed into each other. The shared
+ * wedding components (src/components/wedding) read these tokens, so this file
+ * is the single source of look-and-feel for the theme.
+ *
+ * Tokens (faithful to skills/design-system/minimal):
+ *   --c-bg #F4F4F1 off-white · --c-surface #FFFFFF
+ *   --c-primary #0C0C09 near-black · --c-secondary/--c-accent #312C85 indigo
+ *   --c-text #0C0C09 · --c-muted #6E6E66
+ *   --radius 0 · --shadow none (hairlines instead) · --border rgba(12,12,9,.14)
+ */
+.theme-minimal {
+  --c-bg: #f4f4f1;
+  --c-surface: #ffffff;
+  --c-primary: #0c0c09;
+  --c-secondary: #312c85;
+  --c-accent: #312c85;
+  --c-text: #0c0c09;
+  --c-muted: #6e6e66;
+  --radius: 0;
+  --shadow: none;
+  --border: rgba(12, 12, 9, 0.14);
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+
+  color-scheme: light;
+  background-color: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display type — Inter with tight editorial tracking (-0.03em). */
+.theme-minimal :is(h1, h2, h3),
+.theme-minimal .m-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+/* Small-caps editorial label — 0.25em letter-spacing. */
+.theme-minimal .m-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+/* Hairline outline action — the only "card" is a thin rectangle. */
+.theme-minimal .m-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  padding: 0.625rem 1.25rem;
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--c-primary);
+  background-color: transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.theme-minimal .m-btn:hover {
+  background-color: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-bg);
+}
+
+.theme-minimal .m-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Flat, rectangle-first imagery. */
+.theme-minimal img {
+  display: block;
+}
