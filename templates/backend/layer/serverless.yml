@@ -1,0 +1,29 @@
+# Shared Lambda layer — wedding_card_invitation_web_common utilities (response, connection, serializer,
+# validator, auth, logger). Deploy FIRST, capture the new layer ARN, then redeploy
+# every service with WEDDING_CARD_INVITATION_WEB_COMMON_LAYER_ARN pointed at it.
+service: wedding-card-invitation-web-common-layer
+frameworkVersion: '3'
+
+plugins:
+  - serverless-prune-plugin
+
+custom:
+  prune:
+    automatic: true
+    number: 2
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: ap-southeast-1
+  stage: ${opt:stage, 'dev'}
+
+layers:
+  repoCommon:
+    path: python
+    name: wedding-card-invitation-web-common
+    description: 'Shared utilities: response, connection, serializer, validator, auth, logger'
+    compatibleRuntimes:
+      - python3.11
+      - python3.12
+    retain: false

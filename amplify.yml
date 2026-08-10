@@ -1,0 +1,45 @@
+# Canonical Amplify build spec for this foundation (merged from the sibling projects).
+#
+# - `appRoot: apps/web` — Amplify runs inside apps/web, so the preBuild phase
+#   cd's to the monorepo root (`../..`) before `npm ci`; workspaces keep a single
+#   node_modules at the root.
+# - Build runs the root package.json script `build:web` (`npm run build:web`),
+#   not a per-app script.
+# - `artifacts.baseDirectory` depends on the frontend framework:
+#       Next.js static export (`output: 'export'`) ->  out
+#       Vite SPA                                    ->  dist
+#   (pick one; the other is harmless to leave cached below)
+# - Phases MUST use the `commands:` sub-key — the bare list form is silently
+#   ignored and NO build command runs (pain point #26).
+# - The SPA rewrite below is belt-and-braces; on CLI-created apps set it at the
+#   APP level instead: `aws amplify update-app --custom-rules` (pain point #27).
+version: 1
+applications:
+  - appRoot: apps/web
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - cd ../..
+            - npm ci
+        build:
+          commands:
+            - npm run build:web
+      artifacts:
+        baseDirectory: out # Vite SPA -> dist
+        files:
+          - '**/*'
+      customHeaders:
+        - pattern: '**/*'
+          headers:
+            - key: 'Strict-Transport-Security'
+              value: 'max-age=31536000; includeSubDomains'
+      customRules:
+        - source: '</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|webp)$)([^.]+$)/>'
+          target: /index.html
+          status: 200
+      cache:
+        paths:
+          - ../../node_modules/**/*
+          - .next/**/*
+          - .vite/**/*

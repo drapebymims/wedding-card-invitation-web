@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Frontend builds
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Sanity
+.sanity/
+
+# Env — never commit real secrets (keep the example)
+.env
+.env.local
+.env.*.local
+.env.production
+!.env.example
+
+# Terraform state (contains live resource IDs / secrets)
+*.tfstate
+*.tfstate.*
+*.tfplan*
+.terraform/
+infra/terraform/*.tfstate*
+infra/terraform/tfplan*
+infra/terraform/.terraform/
+
+# Serverless
+.serverless/
+services/**/.serverless/
+layers/**/.serverless/
+
+# Shared layer python install artifacts (Linux wheels extract these)
+layers/**/*.libs/
+layers/**/*.dist-info/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+.fleet/
+
+# Scratch / work logs
+out.txt
+.opencode/
+layers/**/python/python/*
+!layers/**/python/python/*_common/

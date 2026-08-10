@@ -1,0 +1,124 @@
+# Service skeleton — wedding-card-invitation-web-<name>-service
+#
+# Three Lambda functions:
+#   publicHandler  -> /public/{proxy+}   no authorizer (storefront, health, etc.)
+#   authHandler    -> /auth/{proxy+}     no authorizer (Cognito login/signup)
+#   <name>Handler  -> /admin/{proxy+}    COGNITO_USER_POOLS authorizer (authenticated routes)
+#
+# Copy this directory, rename to services/<name>-service, and replace every
+# `<name>` token with your domain name (e.g. order-service / order_module).
+service: wedding-card-invitation-web-<name>-service
+frameworkVersion: '3'
+
+plugins:
+  - serverless-prune-plugin
+
+custom:
+  prune:
+    automatic: true
+    number: 2
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: ap-southeast-1
+  stage: ${opt:stage, 'dev'}
+
+  # CORS on error responses (401/403 from the authorizer, etc.) so the browser
+  # can read the status and the frontend can auto-redirect to sign-in.
+  apiGateway:
+    gatewayResponses:
+      UNAUTHORIZED:
+        statusCode: '401'
+        responseParameters:
+          GatewayResponse.header.Access-Control-Allow-Origin: "'*'"
+          GatewayResponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+          GatewayResponse.header.Access-Control-Allow-Methods: "'GET,POST,PUT,PATCH,DELETE,OPTIONS'"
+      ACCESS_DENIED:
+        statusCode: '403'
+        responseParameters:
+          GatewayResponse.header.Access-Control-Allow-Origin: "'*'"
+          GatewayResponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+          GatewayResponse.header.Access-Control-Allow-Methods: "'GET,POST,PUT,PATCH,DELETE,OPTIONS'"
+      DEFAULT_4XX:
+        responseParameters:
+          GatewayResponse.header.Access-Control-Allow-Origin: "'*'"
+          GatewayResponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+          GatewayResponse.header.Access-Control-Allow-Methods: "'GET,POST,PUT,PATCH,DELETE,OPTIONS'"
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminConfirmSignUp
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:DeleteObject
+          Resource:
+            - 'arn:aws:s3:::wedding-card-invitation-web-${opt:stage}-receipts*'
+            - 'arn:aws:s3:::wedding-card-invitation-web-${opt:stage}-receipts*/*'
+            - 'arn:aws:s3:::wedding-card-invitation-web-${opt:stage}-assets*'
+            - 'arn:aws:s3:::wedding-card-invitation-web-${opt:stage}-assets*/*'
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: '*'
+
+  environment:
+    GETDB_CONNECTION: ${env:GETDB_CONNECTION}
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
+    COGNITO_APP_CLIENT_ID: ${env:COGNITO_APP_CLIENT_ID}
+    COGNITO_DOMAIN: ${env:COGNITO_DOMAIN}
+    RECEIPTS_BUCKET: ${env:RECEIPTS_BUCKET}
+    ASSETS_BUCKET: ${env:ASSETS_BUCKET}
+    ASSETS_CDN_URL: ${env:ASSETS_CDN_URL}
+    SES_SOURCE: ${env:SES_SOURCE}
+    ADMIN_NOTIFY_EMAIL: ${env:ADMIN_NOTIFY_EMAIL}
+    FRONTEND_URL: ${env:FRONTEND_URL}
+    SENDER_NAME: ${env:SENDER_NAME, '<sender-name>'}
+    SENDER_PHONE: ${env:SENDER_PHONE, ''}
+    SENDER_ADDRESS: ${env:SENDER_ADDRESS, ''}
+    API_BASE_URL: ${env:API_BASE_URL, ''}
+
+functions:
+  publicHandler:
+    handler: <name>_module.public_handler.lambda_handler
+    events:
+      - http:
+          path: /public/{proxy+}
+          method: any
+          cors: true
+    layers:
+      - ${env:WEDDING_CARD_INVITATION_WEB_COMMON_LAYER_ARN}
+
+  authHandler:
+    handler: <name>_module.auth_handler.lambda_handler
+    events:
+      - http:
+          path: /auth/{proxy+}
+          method: any
+          cors: true
+    layers:
+      - ${env:WEDDING_CARD_INVITATION_WEB_COMMON_LAYER_ARN}
+
+  <name>Handler:
+    handler: <name>_module.handler.lambda_handler
+    events:
+      - http:
+          path: /admin/{proxy+}
+          method: any
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            arn: ${env:COGNITO_USER_POOL_ARN}
+    layers:
+      - ${env:WEDDING_CARD_INVITATION_WEB_COMMON_LAYER_ARN}

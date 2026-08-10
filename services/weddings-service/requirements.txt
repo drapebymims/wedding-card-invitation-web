@@ -1,0 +1,5 @@
+# Minimal per-service deps.
+# requests and Pillow live in the shared layer (wedding_card_invitation_web_common) — do NOT reinstall
+# them here (see templates/backend/layer/README.md).
+psycopg2-binary==2.9.10
+boto3==1.38.16

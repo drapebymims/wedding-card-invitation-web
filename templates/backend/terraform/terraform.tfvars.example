@@ -1,0 +1,32 @@
+# terraform.tfvars.example — copy to terraform.tfvars and fill in real values.
+# Never commit real values (see docs/pain-points.md #13).
+
+aws_region = "ap-southeast-1"          # AWS region for all resources
+
+stage = "dev"                          # Deployment stage (dev/prod)
+
+# Globally unique — S3 bucket names must be unique across ALL AWS accounts.
+# Pick a per-account suffix (e.g. "-1", "-nik") and keep it consistent.
+bucket_suffix = ""
+
+db_instance_class = "db.t4g.micro"     # RDS instance class (free tier compatible)
+
+db_backup_retention = 1                # Backup retention in days (free tier max = 1)
+
+db_name = "repo"                       # Database name (lowercase)
+
+db_username = "repo_admin"             # Database master username
+
+# Must be globally unique across Cognito (lowercase). e.g. "<project>-auth-dev"
+cognito_domain_prefix = "repo-auth-dev"
+
+# Optional Google social login — leave empty to disable.
+google_client_id     = ""
+google_client_secret = ""
+
+# Admin user email for the dashboard (seed/setup scripts read this).
+admin_email = "admin@<your-domain>"
+
+# Frontend base URL for Cognito callback URLs. Keep the localhost entry in
+# cognito.tf for local dev; set the deployed URL here.
+frontend_url = "http://localhost:5173"
