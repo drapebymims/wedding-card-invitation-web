@@ -32,6 +32,10 @@ surfaces in a live project, add a row here (rule 9 in AGENTS.md).
 | 22 | CORS blocks the browser from reading 401/403 | `apiGateway.gatewayResponses` for `UNAUTHORIZED`/`ACCESS_DENIED`/`DEFAULT_4XX` |
 | 23 | CloudFront serves stale content after deploy | Invalidate the distribution or confirm the new ETag is served (`s-maxage=31536000`) |
 | 24 | Session transcripts / scratch files committed to the repo | Gitignore them (`out.txt`, `newsinarproject.md`-style); keep the repo clean |
+| 25 | `update-user-pool-client` silently resets `ExplicitAuthFlows` | Re-pass `--explicit-auth-flows` (ALLOW_USER_PASSWORD_AUTH, ALLOW_USER_SRP_AUTH, ALLOW_REFRESH_TOKEN_AUTH) on every client update — the default set lacks USER_PASSWORD_AUTH and API password login breaks |
+| 26 | Amplify build "succeeds" but errors `Artifact directory doesn't exist` | In the `applications:` multi-app format, phases MUST use `commands:` sub-keys (`build: commands: [npm run ...]`) — bare-list phases are silently ignored and NO command runs |
+| 27 | SPA deep links 404 (301 → 404) on CLI-created Amplify apps | Set the rewrite at the APP level: `aws amplify update-app --custom-rules` with the regex non-asset → `/index.html` (status 200) — build-spec `customRules` don't take effect on CLI-created apps |
+| 28 | Admin calls fail in the browser with axios `Network Error` (server returns 200 via curl) | API Gateway's Cognito authorizer rejects the **AccessToken** with a bare 401 that lacks `Access-Control-Allow-Origin` — browsers surface that as CORS/"Network Error". Send the **IdToken** in the `Authorization` header (the proven sibling pattern) |
 
 ## Why this file exists
 
@@ -47,7 +51,3 @@ human-readable index of *why* those rules exist. When you hit something new:
 
 - `docs/sop.md` — the runbook that applies these preventions step by step.
 - `docs/conventions.md` — the rules that avoid most of these traps by construction.
-| 25 | `update-user-pool-client` silently resets `ExplicitAuthFlows` | Re-pass `--explicit-auth-flows` (ALLOW_USER_PASSWORD_AUTH, ALLOW_USER_SRP_AUTH, ALLOW_REFRESH_TOKEN_AUTH) on every client update — the default set lacks USER_PASSWORD_AUTH and API password login breaks |
-| 26 | Amplify build "succeeds" but errors `Artifact directory doesn't exist` | In the `applications:` multi-app format, phases MUST use `commands:` sub-keys (`build: commands: [npm run ...]`) — bare-list phases are silently ignored and NO command runs |
-| 27 | SPA deep links 404 (301 → 404) on CLI-created Amplify apps | Set the rewrite at the APP level: `aws amplify update-app --custom-rules` with the regex non-asset → `/index.html` (status 200) — build-spec `customRules` don't take effect on CLI-created apps |
-| 28 | Admin calls fail in the browser with axios `Network Error` (server returns 200 via curl) | API Gateway's Cognito authorizer rejects the **AccessToken** with a bare 401 that lacks `Access-Control-Allow-Origin` — browsers surface that as CORS/"Network Error". Send the **IdToken** in the `Authorization` header (the proven sibling pattern) |

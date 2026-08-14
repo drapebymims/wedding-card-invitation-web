@@ -58,3 +58,6 @@ layers/**/python/python/*
 
 # Terraform — never commit real values (see docs/pain-points.md #13)
 infra/terraform/terraform.tfvars
+
+# Local AWS backup (DB dumps, asset syncs, tfstate copies) — never commit
+backup/
