@@ -20,6 +20,13 @@ applications:
       phases:
         preBuild:
           commands:
+            # Build-on-demand config sync: pull live paid/building/live orders'
+            # configs from /internal/couples-configs into config/couples/ so
+            # generateStaticParams bakes them into the static export. Runs from
+            # apps/web (appRoot) BEFORE cd ../.. / npm ci. Reads INTERNAL_API_KEY
+            # + INTERNAL_CONFIGS_URL / NEXT_PUBLIC_API_BASE_URL from Amplify env
+            # vars. No-ops (never fails the build) when the API/key is unset.
+            - node scripts/sync-couples.mjs
             - cd ../..
             - npm ci
         build:
