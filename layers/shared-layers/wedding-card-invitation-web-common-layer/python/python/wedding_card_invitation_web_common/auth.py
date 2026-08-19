@@ -3,6 +3,12 @@
 import json
 import os
 
+# Cognito group conventions for this platform.
+# Platform staff/admin group — full access to every couple's admin data.
+PLATFORM_ADMIN_GROUP = 'admin'
+# Couple-facing group — regular accounts that own couples via the orders table.
+COUPLE_GROUP = 'couple'
+
 
 def verify_token(token, user_pool_id=None, region=None):
     """Verify a Cognito JWT. Returns claims dict or None."""
@@ -48,4 +54,9 @@ def get_user_groups(event):
 
 def get_user_role(event):
     groups = get_user_groups(event)
-    return 'admin' if 'admin' in groups else ('user' if groups else '')
+    return 'admin' if PLATFORM_ADMIN_GROUP in groups else ('user' if groups else '')
+
+
+def is_platform_admin(event):
+    """True when the caller is in the platform staff/admin Cognito group."""
+    return PLATFORM_ADMIN_GROUP in get_user_groups(event)

@@ -9,5 +9,8 @@ from .validator import (
     require_params, safe_sort, safe_order,
     parse_int, parse_pagination,
 )
-from .auth import verify_token, get_user_sub, get_user_email, get_user_groups, get_user_role
+from .auth import (
+    verify_token, get_user_sub, get_user_email, get_user_groups, get_user_role,
+    is_platform_admin, PLATFORM_ADMIN_GROUP, COUPLE_GROUP,
+)
 from .logger import get_logger
