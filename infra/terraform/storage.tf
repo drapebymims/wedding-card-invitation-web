@@ -1,7 +1,7 @@
 # S3 bucket for user uploads (receipts/files) — private
 resource "aws_s3_bucket" "receipts" {
   bucket = "wedding-card-invitation-web-${var.stage}-receipts${var.bucket_suffix}"
-  tags = { Name = "wedding-card-invitation-web-${var.stage}-receipts" }
+  tags   = { Name = "wedding-card-invitation-web-${var.stage}-receipts" }
 }
 
 resource "aws_s3_bucket_versioning" "receipts" {
@@ -12,7 +12,7 @@ resource "aws_s3_bucket_versioning" "receipts" {
 }
 
 resource "aws_s3_bucket_public_access_block" "receipts" {
-  bucket = aws_s3_bucket.receipts.id
+  bucket                  = aws_s3_bucket.receipts.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -24,7 +24,7 @@ resource "aws_s3_bucket_public_access_block" "receipts" {
 # the Origin Access Control pattern — not a project name.)
 resource "aws_s3_bucket" "assets" {
   bucket = "wedding-card-invitation-web-${var.stage}-assets${var.bucket_suffix}"
-  tags = { Name = "wedding-card-invitation-web-${var.stage}-assets" }
+  tags   = { Name = "wedding-card-invitation-web-${var.stage}-assets" }
 }
 
 resource "aws_s3_bucket_versioning" "assets" {
@@ -35,7 +35,7 @@ resource "aws_s3_bucket_versioning" "assets" {
 }
 
 resource "aws_s3_bucket_public_access_block" "assets" {
-  bucket = aws_s3_bucket.assets.id
+  bucket                  = aws_s3_bucket.assets.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -55,10 +55,10 @@ resource "aws_s3_bucket_policy" "assets_cloudfront" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = { Service = "cloudfront.amazonaws.com" }
-      Action   = "s3:GetObject"
-      Resource = "${aws_s3_bucket.assets.arn}/*"
+      Action    = "s3:GetObject"
+      Resource  = "${aws_s3_bucket.assets.arn}/*"
       Condition = {
         StringEquals = {
           "AWS:SourceArn" = aws_cloudfront_distribution.assets.arn
@@ -100,4 +100,19 @@ resource "aws_cloudfront_distribution" "assets" {
   }
 
   tags = { Name = "wedding-card-invitation-web-${var.stage}-assets-cdn" }
+}
+
+# CORS for the assets bucket so the browser can PUT uploaded images directly to
+# S3 via a presigned URL (the studio upload widget). Allowed from the frontend
+# origin; permissive on headers (x-amz-*) and exposes ETag for the upload result.
+resource "aws_s3_bucket_cors_configuration" "assets" {
+  bucket = aws_s3_bucket.assets.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "PUT", "HEAD"]
+    allowed_origins = [var.frontend_url]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
 }

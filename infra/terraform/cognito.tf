@@ -39,6 +39,15 @@ resource "aws_cognito_user_pool" "main" {
   }
 }
 
+# Couple-facing group — regular accounts that own one or more couples via the
+# orders table (owner_sub = the user's Cognito sub). Platform staff use the
+# 'admin' group instead (see auth.py PLATFORM_ADMIN_GROUP).
+resource "aws_cognito_user_group" "couple" {
+  name         = "couple"
+  user_pool_id = aws_cognito_user_pool.main.id
+  description  = "Couple accounts — own one or more couples via orders"
+}
+
 # Cognito App Client (web SPA, implicit flow)
 resource "aws_cognito_user_pool_client" "web" {
   name         = "wedding-card-invitation-web-${var.stage}-web"
