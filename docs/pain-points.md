@@ -36,6 +36,7 @@ surfaces in a live project, add a row here (rule 9 in AGENTS.md).
 | 26 | Amplify build "succeeds" but errors `Artifact directory doesn't exist` | In the `applications:` multi-app format, phases MUST use `commands:` sub-keys (`build: commands: [npm run ...]`) — bare-list phases are silently ignored and NO command runs |
 | 27 | SPA deep links 404 (301 → 404) on CLI-created Amplify apps | Set the rewrite at the APP level: `aws amplify update-app --custom-rules` with the regex non-asset → `/index.html` (status 200) — build-spec `customRules` don't take effect on CLI-created apps |
 | 28 | Admin calls fail in the browser with axios `Network Error` (server returns 200 via curl) | API Gateway's Cognito authorizer rejects the **AccessToken** with a bare 401 that lacks `Access-Control-Allow-Origin` — browsers surface that as CORS/"Network Error". Send the **IdToken** in the `Authorization` header (the proven sibling pattern) |
+| 29 | Per-couple admin scoping 500s for non-staff until the `orders` table exists | Ownership check queries `public.orders` (owner_sub → couple_slug). Apply migration 004 **before** deploying the gated handler; non-admin calls fail closed (500) until then — platform-staff group is unaffected |
 
 ## Why this file exists
 
