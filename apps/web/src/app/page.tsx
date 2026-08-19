@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCoupleSummaries } from "@/lib/config";
 import { t } from "@/lib/i18n";
+import { LandingPricing } from "@/components/buyer/LandingPricing";
 
 export default function Home() {
   const couples = getCoupleSummaries();
@@ -64,10 +65,27 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <LandingPricing />
+
       {/* CTA */}
       <section className="bg-[var(--c-primary)] px-5 py-20 text-center">
         <h2 className="text-3xl font-semibold text-white">{t("cta_title", "en")}</h2>
         <p className="mx-auto mt-4 max-w-xl text-white/80">{t("cta_subtitle", "en")}</p>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/templates"
+            className="inline-block rounded-full bg-white px-8 py-3 text-base font-semibold text-[var(--c-primary)] transition-transform hover:-translate-y-0.5"
+          >
+            {t("browse_templates", "en")} →
+          </Link>
+          <Link
+            href="/pricing"
+            className="inline-block rounded-full border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:bg-white/10"
+          >
+            {t("pricing_title", "en")}
+          </Link>
+        </div>
       </section>
 
       <footer className="bg-[var(--c-bg)] px-5 py-8 text-center text-sm text-[var(--c-muted)]">
