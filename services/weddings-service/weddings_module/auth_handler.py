@@ -2,6 +2,13 @@
 
 Mounted at /auth/{proxy+}. Backs the frontend sign-in/sign-up forms.
 
+Signup creates a proper couple account via the Cognito admin APIs:
+  * `admin_create_user` (email as username, email pre-verified, `custom:role=couple`)
+  * `admin_set_user_password` (permanent password — no forced change on first login)
+  * `create_group` + `admin_add_user_to_group` (couple-facing `couple` group)
+The user's Cognito `sub` is returned so downstream lanes can use it as the
+`orders.owner_sub` when the couple's order is created.
+
 Canonical handler pattern: top-level try/except -> route dispatch on
 httpMethod + path -> get_connection/get_cursor in try/finally ->
 close_connection in finally -> envelope helpers. (Pure-auth routes don't
@@ -12,8 +19,9 @@ import json
 import os
 
 from wedding_card_invitation_web_common import (
-    success, validation_error, internal_error,
+    success, conflict, validation_error, internal_error,
     get_connection, get_cursor, close_connection, get_logger,
+    COUPLE_GROUP,
 )
 
 logger = get_logger(__name__)
@@ -55,7 +63,7 @@ def _handle_auth(cursor, conn, http_method, path, body):
             logger.error(f'Login failed: {e}')
             return validation_error('Login failed')
 
-    # POST /auth/signup
+    # POST /auth/signup — create a couple account via Cognito admin APIs.
     if http_method == 'POST' and path.rstrip('/') == '/auth/signup':
         email = body.get('email') or ''
         password = body.get('password') or ''
@@ -63,16 +71,47 @@ def _handle_auth(cursor, conn, http_method, path, body):
         if not email or not password:
             return validation_error('email and password are required')
         try:
-            client.sign_up(
-                ClientId=app_client_id,
+            resp = client.admin_create_user(
+                UserPoolId=pool_id,
+                Username=email,
+                UserAttributes=[
+                    {'Name': 'email', 'Value': email},
+                    {'Name': 'name', 'Value': name},
+                    {'Name': 'email_verified', 'Value': 'true'},
+                    {'Name': 'custom:role', 'Value': COUPLE_GROUP},
+                ],
+                MessageAction='SUPPRESS',
+            )
+            client.admin_set_user_password(
+                UserPoolId=pool_id,
                 Username=email,
                 Password=password,
-                UserAttributes=[{'Name': 'email', 'Value': email}, {'Name': 'name', 'Value': name}],
+                Permanent=True,
             )
-            return success({'message': 'Account created. Check your email to verify.'})
+            try:
+                client.create_group(UserPoolId=pool_id, GroupName=COUPLE_GROUP)
+            except client.exceptions.GroupExistsException:
+                pass
+            client.admin_add_user_to_group(
+                UserPoolId=pool_id,
+                Username=email,
+                GroupName=COUPLE_GROUP,
+            )
+            sub = next(
+                (attr['Value'] for attr in resp['User'].get('Attributes', []) if attr['Name'] == 'sub'),
+                '',
+            )
+            return success({'message': 'Account created', 'sub': sub})
+        except client.exceptions.UsernameExistsException:
+            return conflict('An account with this email already exists')
+        except client.exceptions.InvalidPasswordException:
+            return validation_error('Password does not meet the requirements')
+        except client.exceptions.InvalidParameterException as e:
+            logger.error(f'Signup invalid parameter: {e}')
+            return validation_error('Signup failed')
         except Exception as e:
             logger.error(f'Signup failed: {e}')
-            return validation_error('Signup failed')
+            return internal_error('Signup failed')
 
     return validation_error('Method not supported')
 

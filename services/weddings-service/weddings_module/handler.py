@@ -4,6 +4,12 @@ Mounted at /admin/{proxy+}. Any Cognito user passes the authorizer; role-gating
 is enforced in-app via `get_user_role` / `get_user_email` (never rely on API
 Gateway claims alone).
 
+Per-couple scoping: platform staff (Cognito group 'admin') may access any
+coupleSlug. Every other authenticated user may only access couple_slug values
+they own — i.e. rows in `public.orders` where `owner_sub` = the caller's Cognito
+`sub` claim. The check is centralized in `_authorize_couple` and applied to every
+couple-scoped route (including wish/gift moderation by the row's couple_slug).
+
 Routes:
   GET    /admin/health          -> liveness probe
   GET    /admin/rsvps           -> paginated RSVPs (coupleSlug, optional attendance)
@@ -27,7 +33,7 @@ import json
 from wedding_card_invitation_web_common import (
     success, not_found, forbidden, validation_error, internal_error,
     get_connection, get_cursor, close_connection,
-    get_user_email, get_user_sub, get_user_role, get_logger,
+    get_user_email, get_user_sub, is_platform_admin, get_logger,
     parse_pagination, paginated,
 )
 
@@ -69,7 +75,30 @@ def _require_couple_slug(params):
     return couple_slug
 
 
-def _handle_admin(cursor, conn, http_method, path, body, params):
+def _authorize_couple(cursor, event, couple_slug):
+    """Return None if the caller may access couple_slug, else a forbidden envelope.
+
+    Platform staff (Cognito group 'admin') may access any couple. Everyone else
+    must own the couple: a row in `public.orders` with owner_sub = the caller's
+    Cognito `sub` claim and couple_slug = the requested slug. Fails closed — a
+    missing sub or no matching orders row denies access.
+    """
+    if is_platform_admin(event):
+        return None
+    sub = get_user_sub(event)
+    if not sub:
+        return forbidden('Missing caller identity')
+    cursor.execute(
+        'SELECT 1 FROM public.orders '
+        'WHERE owner_sub = %(owner_sub)s AND couple_slug = %(couple_slug)s LIMIT 1',
+        {'owner_sub': sub, 'couple_slug': couple_slug},
+    )
+    if cursor.fetchone() is None:
+        return forbidden(f'Access to couple "{couple_slug}" is not allowed')
+    return None
+
+
+def _handle_admin(cursor, conn, event, http_method, path, body, params):
     clean_path = path.rstrip('/')
 
     # GET /admin/health — sanity check for authenticated requests.
@@ -81,6 +110,9 @@ def _handle_admin(cursor, conn, http_method, path, body, params):
         couple_slug = _require_couple_slug(params)
         if not couple_slug:
             return validation_error('coupleSlug is required')
+        resp = _authorize_couple(cursor, event, couple_slug)
+        if resp is not None:
+            return resp
         attendance = (params.get('attendance') or '').strip()
         if attendance and attendance not in ('yes', 'no'):
             return validation_error('attendance must be either "yes" or "no"')
@@ -115,6 +147,9 @@ def _handle_admin(cursor, conn, http_method, path, body, params):
         couple_slug = _require_couple_slug(params)
         if not couple_slug:
             return validation_error('coupleSlug is required')
+        resp = _authorize_couple(cursor, event, couple_slug)
+        if resp is not None:
+            return resp
         cursor.execute(
             '''
             SELECT
@@ -147,6 +182,9 @@ def _handle_admin(cursor, conn, http_method, path, body, params):
         couple_slug = _require_couple_slug(params)
         if not couple_slug:
             return validation_error('coupleSlug is required')
+        resp = _authorize_couple(cursor, event, couple_slug)
+        if resp is not None:
+            return resp
         status = (params.get('status') or 'pending').strip()
         if status not in ('pending', 'approved', 'all'):
             return validation_error('status must be one of "pending", "approved", "all"')
@@ -182,26 +220,36 @@ def _handle_admin(cursor, conn, http_method, path, body, params):
         approved = body.get('approved')
         if not isinstance(approved, bool):
             return validation_error('approved must be a boolean')
+        cursor.execute('SELECT couple_slug FROM public.wishes WHERE id = %(id)s', {'id': wish_id})
+        row = cursor.fetchone()
+        if row is None:
+            return not_found('Wish not found')
+        resp = _authorize_couple(cursor, event, row['couple_slug'])
+        if resp is not None:
+            return resp
         cursor.execute(
             'UPDATE public.wishes SET approved = %(approved)s '
             'WHERE id = %(id)s RETURNING id, approved',
             {'approved': approved, 'id': wish_id},
         )
         row = cursor.fetchone()
-        if row is None:
-            return not_found('Wish not found')
         conn.commit()
         return success({'id': row['id'], 'approved': row['approved']})
 
     # DELETE /admin/wishes/{id}
     if http_method == 'DELETE' and wish_id is not None:
+        cursor.execute('SELECT couple_slug FROM public.wishes WHERE id = %(id)s', {'id': wish_id})
+        row = cursor.fetchone()
+        if row is None:
+            return not_found('Wish not found')
+        resp = _authorize_couple(cursor, event, row['couple_slug'])
+        if resp is not None:
+            return resp
         cursor.execute(
             'DELETE FROM public.wishes WHERE id = %(id)s RETURNING id',
             {'id': wish_id},
         )
         row = cursor.fetchone()
-        if row is None:
-            return not_found('Wish not found')
         conn.commit()
         return success({'id': row['id']})
 
@@ -210,6 +258,9 @@ def _handle_admin(cursor, conn, http_method, path, body, params):
         couple_slug = _require_couple_slug(params)
         if not couple_slug:
             return validation_error('coupleSlug is required')
+        resp = _authorize_couple(cursor, event, couple_slug)
+        if resp is not None:
+            return resp
         page, per_page = parse_pagination(params)
         page = max(1, page)
         per_page = max(1, per_page)
@@ -229,13 +280,18 @@ def _handle_admin(cursor, conn, http_method, path, body, params):
 
     # DELETE /admin/gifts/{id}
     if http_method == 'DELETE' and gift_id is not None:
+        cursor.execute('SELECT couple_slug FROM public.gifts WHERE id = %(id)s', {'id': gift_id})
+        row = cursor.fetchone()
+        if row is None:
+            return not_found('Gift not found')
+        resp = _authorize_couple(cursor, event, row['couple_slug'])
+        if resp is not None:
+            return resp
         cursor.execute(
             'DELETE FROM public.gifts WHERE id = %(id)s RETURNING id',
             {'id': gift_id},
         )
         row = cursor.fetchone()
-        if row is None:
-            return not_found('Gift not found')
         conn.commit()
         return success({'id': row['id']})
 
@@ -258,10 +314,10 @@ def lambda_handler(event, context):
         conn = get_connection()
         cursor = get_cursor(conn)
         try:
-            # Role gate example — enforce per-route, not at the door:
-            # if get_user_role(event) != 'admin':
-            #     return forbidden('Admin role required')
-            return _handle_admin(cursor, conn, http_method, path, body, params)
+            # Per-couple scoping is enforced inside _handle_admin via
+            # _authorize_couple (platform staff group bypasses; everyone else
+            # must own the couple through the orders table).
+            return _handle_admin(cursor, conn, event, http_method, path, body, params)
         finally:
             close_connection(conn, cursor)
     except Exception as e:

@@ -107,9 +107,13 @@ def fake_db(monkeypatch):
 
     import weddings_module.public_handler as public_module
     import weddings_module.handler as admin_module
+    import weddings_module.orders_handler as orders_module
+    import weddings_module.toyyibpay as toyyibpay_module
 
     install(public_module)
     install(admin_module)
+    install(orders_module)
+    install(toyyibpay_module)
     return {'cursor': cursor, 'conn': conn}
 
 
@@ -123,3 +127,15 @@ def public_lambda(fake_db):
 def admin_lambda(fake_db):
     import weddings_module.handler as admin_module
     return admin_module.lambda_handler
+
+
+@pytest.fixture
+def orders_lambda(fake_db):
+    import weddings_module.orders_handler as orders_module
+    return orders_module.lambda_handler
+
+
+@pytest.fixture
+def internal_lambda(fake_db):
+    import weddings_module.orders_handler as orders_module
+    return orders_module.internal_lambda_handler

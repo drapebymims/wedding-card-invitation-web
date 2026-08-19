@@ -12,8 +12,11 @@ def _call(handler, method, path, body=None, query=None, claims=None):
     event = {'httpMethod': method, 'path': path, 'queryStringParameters': query or {}}
     if body is not None:
         event['body'] = json.dumps(body)
-    if claims:
-        event['requestContext'] = {'authorizer': {'claims': claims}}
+    # Default to platform-staff claims so existing tests exercise the full-access
+    # path; pass explicit claims to test per-couple scoping.
+    event['requestContext'] = {
+        'authorizer': {'claims': claims or {'sub': 'staff-sub', 'cognito:groups': 'admin'}},
+    }
     return handler(event, {})
 
 
@@ -145,7 +148,7 @@ def test_admin_wishes_rejects_bad_status(admin_lambda, fake_db):
 # ---------------------------------------------------------------- wish moderation
 
 def test_admin_wishes_patch_approve(admin_lambda, fake_db):
-    fake_db['cursor'].results = [{'id': 7, 'approved': True}]
+    fake_db['cursor'].results = [{'couple_slug': 'bride-groom'}, {'id': 7, 'approved': True}]
     resp = _call(admin_lambda, 'PATCH', '/admin/wishes/7', body={'approved': True})
     assert resp['statusCode'] == 200
     assert _body(resp)['data'] == {'id': 7, 'approved': True}
@@ -158,7 +161,7 @@ def test_admin_wishes_patch_approve(admin_lambda, fake_db):
 
 
 def test_admin_wishes_patch_trailing_slash(admin_lambda, fake_db):
-    fake_db['cursor'].results = [{'id': 7, 'approved': False}]
+    fake_db['cursor'].results = [{'couple_slug': 'bride-groom'}, {'id': 7, 'approved': False}]
     resp = _call(admin_lambda, 'PATCH', '/admin/wishes/7/', body={'approved': False})
     assert resp['statusCode'] == 200
     assert _body(resp)['data'] == {'id': 7, 'approved': False}
@@ -187,7 +190,7 @@ def test_admin_wishes_patch_non_numeric_id(admin_lambda, fake_db):
 
 
 def test_admin_wishes_delete(admin_lambda, fake_db):
-    fake_db['cursor'].results = [{'id': 7}]
+    fake_db['cursor'].results = [{'couple_slug': 'bride-groom'}, {'id': 7}]
     resp = _call(admin_lambda, 'DELETE', '/admin/wishes/7')
     assert resp['statusCode'] == 200
     assert _body(resp)['data'] == {'id': 7}
@@ -226,7 +229,7 @@ def test_admin_gifts_requires_couple_slug(admin_lambda, fake_db):
 
 
 def test_admin_gifts_delete(admin_lambda, fake_db):
-    fake_db['cursor'].results = [{'id': 3}]
+    fake_db['cursor'].results = [{'couple_slug': 'bride-groom'}, {'id': 3}]
     resp = _call(admin_lambda, 'DELETE', '/admin/gifts/3')
     assert resp['statusCode'] == 200
     assert _body(resp)['data'] == {'id': 3}
@@ -247,3 +250,79 @@ def test_admin_unknown_route_returns_404(admin_lambda, fake_db):
     assert resp['statusCode'] == 404
     assert _body(resp)['error']['code'] == 'NOT_FOUND'
     assert fake_db['cursor'].calls == []
+
+
+# ---------------------------------------------------------------- per-couple scoping
+
+def test_admin_rsvps_forbidden_for_unowned_couple(admin_lambda, fake_db):
+    fake_db['cursor'].results = [None]  # ownership lookup finds no orders row
+    resp = _call(
+        admin_lambda, 'GET', '/admin/rsvps',
+        query={'coupleSlug': 'other-couple'},
+        claims={'sub': 'couple-sub', 'cognito:groups': 'couple'},
+    )
+    assert resp['statusCode'] == 403
+    assert _body(resp)['error']['code'] == 'FORBIDDEN'
+    # only the ownership query ran — no data query leaked
+    assert len(fake_db['cursor'].calls) == 1
+    assert 'FROM public.orders' in fake_db['cursor'].queries[0]
+    assert fake_db['cursor'].calls[0]['params'] == {'owner_sub': 'couple-sub', 'couple_slug': 'other-couple'}
+
+
+def test_admin_rsvps_allowed_for_owned_couple(admin_lambda, fake_db):
+    fake_db['cursor'].results = [{'owner_sub': 'couple-sub'}, {'total': 1}, [{'id': 1}]]
+    resp = _call(
+        admin_lambda, 'GET', '/admin/rsvps',
+        query={'coupleSlug': 'my-couple'},
+        claims={'sub': 'couple-sub', 'cognito:groups': 'couple'},
+    )
+    assert resp['statusCode'] == 200
+    assert _body(resp)['success'] is True
+    assert fake_db['cursor'].calls[0]['params'] == {'owner_sub': 'couple-sub', 'couple_slug': 'my-couple'}
+
+
+def test_admin_rsvps_forbidden_when_sub_missing(admin_lambda, fake_db):
+    resp = _call(
+        admin_lambda, 'GET', '/admin/rsvps',
+        query={'coupleSlug': 'my-couple'},
+        claims={'cognito:groups': 'couple'},  # no sub claim
+    )
+    assert resp['statusCode'] == 403
+    assert _body(resp)['error']['code'] == 'FORBIDDEN'
+    assert fake_db['cursor'].calls == []
+
+
+def test_admin_platform_staff_bypasses_ownership(admin_lambda, fake_db):
+    fake_db['cursor'].results = [{'total': 0}, []]
+    resp = _call(
+        admin_lambda, 'GET', '/admin/wishes',
+        query={'coupleSlug': 'any-couple'},
+        claims={'sub': 'staff-sub', 'cognito:groups': 'admin'},
+    )
+    assert resp['statusCode'] == 200
+    # platform staff never hit the orders table
+    assert all('FROM public.orders' not in q for q in fake_db['cursor'].queries)
+
+
+def test_admin_wishes_patch_forbidden_for_unowned(admin_lambda, fake_db):
+    fake_db['cursor'].results = [{'couple_slug': 'other-couple'}, None]
+    resp = _call(
+        admin_lambda, 'PATCH', '/admin/wishes/7', body={'approved': True},
+        claims={'sub': 'couple-sub', 'cognito:groups': 'couple'},
+    )
+    assert resp['statusCode'] == 403
+    assert _body(resp)['error']['code'] == 'FORBIDDEN'
+    assert fake_db['conn'].commits == 0
+    assert fake_db['cursor'].calls_for('UPDATE public.wishes') == []
+
+
+def test_admin_gifts_delete_forbidden_for_unowned(admin_lambda, fake_db):
+    fake_db['cursor'].results = [{'couple_slug': 'other-couple'}, None]
+    resp = _call(
+        admin_lambda, 'DELETE', '/admin/gifts/3',
+        claims={'sub': 'couple-sub', 'cognito:groups': 'couple'},
+    )
+    assert resp['statusCode'] == 403
+    assert _body(resp)['error']['code'] == 'FORBIDDEN'
+    assert fake_db['conn'].commits == 0
+    assert fake_db['cursor'].calls_for('DELETE FROM public.gifts') == []
