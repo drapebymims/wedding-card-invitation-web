@@ -38,6 +38,10 @@ layers/**/.serverless/
 layers/**/*.libs/
 layers/**/*.dist-info/
 
+# Python caches
+__pycache__/
+*.pyc
+
 # Logs
 *.log
 npm-debug.log*
@@ -61,3 +65,6 @@ infra/terraform/terraform.tfvars
 
 # Local AWS backup (DB dumps, asset syncs, tfstate copies) — never commit
 backup/
+
+# Deepwork session state — git-local progress files
+.slim/deepwork/
