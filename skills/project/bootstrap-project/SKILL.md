@@ -57,18 +57,30 @@ new look per task.
 ```
 
 This copies this repo to a new directory, renames placeholders (`REPO`/`repo_common`),
-and prints next steps. Then:
+prunes ghost dirs, validates no placeholder or invalid-hyphen module names remain
+(`travel-pelangi_common`-style names fail the build), and prints next steps. Then:
 
 1. `git init && git add -A && git commit -m "chore: scaffold from foundation"` in the new dir.
-2. **Customize the identity** (scaffold copies the template verbatim — a repo that still
+2. **Verify the scaffold actually imports** before anything else: the shared-layer
+   package must be `${SLUG}_common` (underscores) everywhere — docs that spell it with
+   dashes produce unimportable modules agents then chase (#68).
+3. **Customize the identity** (scaffold copies the template verbatim — a repo that still
    reads "Foundation — Project Starter" invites mis-scaffolding):
    - Rewrite the root `README.md` for the actual project.
    - Set the real name in `package.json` (it defaults to `"foundation"`).
    - Trim what the nature doesn't need (frontend-only → delete `services/`, `layers/`,
      `infra/`, backend env vars; lead-gen → skip DB/Cognito).
-3. Fill in project identity: `terraform.tfvars.<stage>` (never committed), root
+4. Fill in project identity: `terraform.tfvars.<stage>` (never committed), root
    `package.json` name, `amplify.yml` appRoot.
-4. Copy the design language choice: `cp -R <foundation>/skills/design-system/<slug> <project>/.opencode/skills/design-system/` (or per your agent tool's skills dir).
+5. Copy the design language choice: `cp -R <foundation>/skills/design-system/<slug> <project>/.opencode/skills/design-system/` (or per your agent tool's skills dir).
+
+### Cost/architecture reality checks (planning-stage estimates were wrong once)
+
+Aurora ran ~2× over estimate ($45–55/mo real); Aurora needs PostgreSQL 16.3+ for
+pgvector AND auto-pause together, and RDS Proxy breaks auto-pause entirely; Cognito free
+tier is 10K MAU (not 50K); SES in ap-southeast-5 is API-only (no SMTP); VPC endpoints
+~$15/mo each are unavoidable in private subnets; LLM-calling services must sit OUTSIDE
+the VPC (#71). Price the footprint before promising timelines.
 
 ## Step 5 — Walk the SOP
 

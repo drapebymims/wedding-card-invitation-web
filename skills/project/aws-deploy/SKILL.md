@@ -84,6 +84,14 @@ aws cloudformation continue-update-rollback --stack-name <stack> --resources-to-
 aws amplify update-app --custom-rules file://rewrite-rules.json
 ```
 
+## Mobile store deploys (React Native/Expo)
+
+Irreversibles to decide BEFORE first submission (#70): Android package names are
+PERMANENT/unreuseable; Apple's "Made for Kids" designation is PERMANENT; Google Play
+personal accounts need a closed test with 12 opted-in testers for 14 consecutive days
+before production access; open AI chat + Kids category = high rejection risk (hide the
+chat). CI deploys additionally hit rows 47–51 (OIDC subs, bucket truncation, env exports).
+
 ## Anti-patterns
 
 - Applying terraform with any planned destroys.

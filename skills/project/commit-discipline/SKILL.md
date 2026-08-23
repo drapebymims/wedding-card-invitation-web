@@ -30,6 +30,10 @@ description: Branch model, conventional commits, secrets hygiene, and the knowle
   ARNs, account IDs, live URLs before pushing (#13).
 - `.env.example` holds placeholders only; `.env.local` / real `.env` never committed;
   no real values as code fallbacks (#16).
+- Env-var NAMES are contract too: `.env.example` must mirror the code's actual `${env:}`
+  references — one sibling documented `DB_SECRET_NAME` while code read `GETDB_CONNECTION`,
+  and deploys misbehaved for weeks (#53). When renaming an env var, change example,
+  serverless.yml, Amplify console vars, and CI exports together.
 - Gitignore final forms: `*.tfvars` + `!terraform.tfvars.example` (#33, #62); vendored
   layer wheels ignored WITH the negation `!layers/**/python/python/*_common/` so the
   layer's own source stays tracked (#19, #57); session transcripts / scratch files

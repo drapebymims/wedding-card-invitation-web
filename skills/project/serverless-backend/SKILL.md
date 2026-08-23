@@ -53,6 +53,11 @@ description: Backend rules for foundation-derived Lambda services — shared lay
   deploys precede client keys.
 - Meta webhooks (WhatsApp-style): dedupe by message id via UNIQUE constraint, enqueue to
   SQS+DLQ, return 200 immediately.
+- ToyyibPay specifics: amounts in SEN (cents); form-encoded POST (`data=...`, NOT
+  `json=`); `billName`/`billDescription` allow alphanumeric+space+underscore only;
+  callbacks can't reach localhost (test against deployed stage); hash is MD5 (theirs);
+  bills expire (`billExpiryDays`); no native recurring billing — track
+  `subscription_end_date` yourself (#69).
 
 ## Deploys & tests
 
