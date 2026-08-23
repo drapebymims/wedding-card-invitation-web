@@ -1,0 +1,88 @@
+name: foundation-sync-check
+# Read-only staleness watchdog: compares this repo's .foundation-sync stamp against
+# the foundation remote HEAD and opens/closes a labeled issue. No push rights needed.
+# Distributed by foundation scripts/share-skills.sh — edit there, then re-sync.
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Mondays 03:00 UTC = 11:00 MYT
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare stamp vs foundation HEAD
+        id: cmp
+        run: |
+          set -euo pipefail
+          URL=$(grep -m1 '^url=' .foundation-sync | cut -d= -f2-)
+          LOCAL=$(grep -m1 '^sha=' .foundation-sync | cut -d= -f2-)
+          REMOTE=$(git ls-remote "$URL" refs/heads/main | head -1 | cut -f1)
+          if [ -z "$REMOTE" ]; then echo "::error::cannot reach $URL"; exit 1; fi
+          STALE=$([ "$LOCAL" = "$REMOTE" ] && echo no || echo yes)
+          {
+            echo "stale=$STALE"
+            echo "local=$LOCAL"
+            echo "remote=$REMOTE"
+            echo "url=$URL"
+          } >> "$GITHUB_OUTPUT"
+          echo "synced=$LOCAL foundation=$REMOTE stale=$STALE"
+
+      - name: Open staleness issue
+        if: steps.cmp.outputs.stale == 'yes'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'foundation-sync',
+            });
+            const body = [
+              'Foundation has moved since the last sync.',
+              '',
+              `- Synced at: \`${{ steps.cmp.outputs.local }}\``,
+              `- Foundation HEAD: \`${{ steps.cmp.outputs.remote }}\``,
+              '',
+              'Fix:',
+              '```bash',
+              'cd <foundation-clone>',
+              `scripts/share-skills.sh \${PWD%/*}/${{ github.event.repository.name }}`,
+              '```',
+              '',
+              'Then commit the refreshed skills/docs and close this issue.',
+            ].join('\n');
+            if (existing.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title: '⚠️ Foundation sync available',
+                body, labels: ['foundation-sync'],
+              });
+            } else {
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing[0].number, body,
+              });
+            }
+
+      - name: Close resolved issue
+        if: steps.cmp.outputs.stale == 'no'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'foundation-sync',
+            });
+            for (const issue of existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, state: 'closed',
+              });
+            }
