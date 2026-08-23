@@ -10,19 +10,6 @@ Two families of skills live here:
 | `plan-first` | Before any multi-file / DB / infra / risky change (the hard gate) |
 | `api-contract` | Writing or reviewing any Lambda handler, endpoint, or axios service |
 | `design-style` | Choosing/applying a design language for UI work |
-| `serverless-backend` | Writing/reviewing any Lambda service, handler, or shared layer code |
-| `data-migrations` | DB schema changes, migrations, seeds, CHECK constraints, analytics views |
-| `static-frontend` | Building/debugging `apps/web` — static export, Vite SPA, uploads, admin gates |
-| `cognito-auth` | Auth/login/token/callback issues, user pool CLI/Terraform changes |
-| `aws-deploy` | Deploying anything — serverless, Terraform, Amplify, CloudFront, CI/CD |
-| `commit-discipline` | Committing/pushing, branch model, secrets hygiene, logging pain points |
-| `foundation-sync` | Checking staleness vs foundation, pulling improvements, feeding learnings upstream |
-
-The last seven encode every trap from `docs/pain-points.md` (rows 1–71) as load-time
-context, so agents hit the prevention instead of re-deriving the symptom.
-`foundation-sync` additionally runs the distribution loop: derived projects check
-staleness via their `.foundation-sync` stamp (`scripts/share-skills.sh --check .`) and
-feed new traps back upstream append-only.
 
 These encode how we work. Copy them into a new project (via `scaffold-project.sh` or the
 `bootstrap-project` skill) and into your agent tools' skills directory (`.opencode/skills/`,
