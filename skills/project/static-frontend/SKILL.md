@@ -16,6 +16,11 @@ client-side: a server component bakes the unfiltered list forever.
 - NO `cache: 'no-store'` on static pages — silently skipped; fallback data renders (#12).
 - Use `fetchRetry` (6 attempts, backoff) in `lib/api.ts` — a transient blip during build
   bakes a PERMANENT error page.
+- The fallback is SILENT and the build still reports SUCCEED (#77): a 5xx while prerendering
+  swaps in mock/fixture content — or an empty shell for `[slug]` pages — and ships it to real
+  traffic. Never deploy the BACKEND while a frontend build is running; grep the build log for
+  the fallback warning (any hit = a page is fake), and verify page BODY (title, image count,
+  byte size), never HTTP status, because an empty shell still answers 200.
 - Fallback-content merge `{...fallback, ...data}` so empty API/CMS never crashes prerender;
   NULL-GUARD admin-settings getters (missing key → 404 → null → crash, #39).
 - Metadata routes (`sitemap.ts`, `robots.ts`, JSON) need `export const dynamic =
@@ -41,6 +46,30 @@ client-side: a server component bakes the unfiltered list forever.
   direct to S3 (#45).
 - SPA-preferred path: browser canvas resize (full+thumb) → one presign POST → direct
   PUTs to S3/CloudFront. Pillow-in-Lambda stays for build-time pipelines.
+- Anything signed into the presign `Params` (`ContentType`, `CacheControl`) MUST be echoed by
+  the browser as a request header or S3 rejects the PUT with a signature error — change both
+  ends in one commit. Objects uploaded without `CacheControl` are re-downloaded by EVERY
+  visitor on every visit (CloudFront caches them; the browser does not), which on a photo-heavy
+  listing is seconds of blank cards on mobile. Keys are fresh UUIDs, so
+  `public, max-age=31536000, immutable` is safe.
+
+## Client-side filters & back navigation
+
+The listing filters over a fully-baked list, so the filter is the ONLY state the user has —
+and component state dies the moment they open a card. Two separate things have to be right
+or "press back and the filter is gone" (#76):
+
+- **Mirror the filter into the URL** (`?q=`) so back/forward, reload and shared links all
+  survive. Write with `router.replace`, never `push` — one history entry per keystroke makes
+  the back button useless; the listing keeps ONE entry holding the final query.
+- **Adopt the URL after hydration**, not in `useState`'s initializer: the static export
+  prerenders that markup with no query, so a first-render mismatch breaks hydration.
+- **Back must not guess.** `history.state.idx` is null in current App Router versions and
+  `document.referrer` never updates on client-side navigation, so inferring the destination
+  silently sends everyone to `/`. Carry the listing URL on the card link (`?from=`) and follow
+  it, validating it is an internal path (`startsWith("/") && !startsWith("//")`) so a shared
+  link cannot smuggle a redirect. A deep link arrives with no `from` and correctly falls back
+  to the full listing.
 
 ## Hosting matrix
 
@@ -58,6 +87,14 @@ client-side: a server component bakes the unfiltered list forever.
   render a guard while `null` (#42).
 - Motion animations live in CLIENT components only (static export renders no animation
   server-side); always honor `prefers-reduced-motion`.
+- A reveal driven by the PARENT's `whileInView` + `viewport={{ once: true }}` never
+  re-propagates to children that mount LATER. Filtering a grid swaps the cards without the
+  group leaving the viewport, so the replacements mount at `hidden` (opacity 0) and stay
+  invisible while the DOM reports them loaded and clickable (#78). Track the in-view state
+  with `useInView` and drive the group with `animate` instead of `whileInView`.
+- Test VISIBILITY, not presence: a card inside an `opacity: 0` wrapper passes every
+  "element exists / image loaded" assertion. Assert on computed `opacity`, and check page
+  BODY (title, image count, size) after a deploy rather than the HTTP status (#77/#78).
 - Multi-tenant/theme sites: tenants = validated JSON config; themes style via CSS-token
   contract only — never edit globals.css from a theme.
 
@@ -68,8 +105,10 @@ client-side: a server component bakes the unfiltered list forever.
 - Retrying POSTs on flaky networks.
 - Real API URLs as source fallbacks.
 - Overwriting logo.png and wondering why the old one shows (#61).
+- Asserting on DOM presence — content inside an `opacity: 0` wrapper looks perfectly present (#78).
+- Trusting a green build over a real body check (#77).
 
 ## Related
 
-pain-points #7, 12, 16, 18, 21, 23, 26, 29, 31, 39, 42, 44–45, 61, 64 · pairs with
-`api-contract`, `cognito-auth`, `aws-deploy`.
+pain-points #7, 12, 16, 18, 21, 23, 26, 29, 31, 39, 42, 44–45, 61, 64, 76–78 ·
+pairs with `api-contract`, `cognito-auth`, `aws-deploy`.

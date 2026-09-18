@@ -53,6 +53,10 @@ description: Deploy playbook for foundation-derived projects — Serverless depl
 - SPA rewrite matrix: Vite gets `customRules` → `/index.html` (#21); Next static export
   gets NONE (#29); CLI-created apps need app-level `update-app --custom-rules` (#27).
 - Admin "rebuild" endpoints need `amplify:StartJob` in service IAM.
+- NEVER deploy the backend while a frontend build is in flight (#77): the deploy's brief 5xxs
+  hit the build's API reads, the prerender swaps in fallback/mock content, and the job still
+  reports SUCCEED over blank or fake pages. Re-run the build after a backend deploy — and
+  check the log each time, because it is intermittent.
 
 ## CORS for authorizer 4xx
 
@@ -66,10 +70,19 @@ with LOWERCASE `gatewayresponse.header.*` keys + `create-deployment`; verify
 Caches `s-maxage=31536000` — invalidate or confirm new ETag after deploys that must
 appear immediately (#23). Replaced assets get RENAMED, not overwritten (#61).
 
+Objects uploaded with NO `Cache-Control` are cached at the edge but re-downloaded by EVERY
+browser on every visit, which on a photo-heavy listing is seconds of blank cards on mobile and
+gets reported as "the images don't show". Sign the header into the presign itself (see
+static-frontend — it is part of the signature) and backfill existing objects with a
+metadata-replace copy; then INVALIDATE, because the edge still holds the headerless response
+for the cache policy's TTL.
+
 ## Post-deploy verification
 
 `scripts/test-flow.sh` all green · browser smoke routes 200/no pageerror · poll builds
-with `scripts/wait-amplify.sh <app-id> <branch>`.
+with `scripts/wait-amplify.sh <app-id> <branch>` · for a static export, check the BODY of
+every generated route (title, image count, byte size) — `sitemap.xml` is the cheap route list.
+An empty shell still answers 200, and a green build can be full of fallback content (#77).
 
 Handy commands:
 
@@ -96,7 +109,9 @@ chat). CI deploys additionally hit rows 47–51 (OIDC subs, bucket truncation, e
 
 - Applying terraform with any planned destroys.
 - `npx serverless` on autopilot.
-- Trusting a green Amplify build (check artifacts exist).
+- Trusting a green Amplify build — check the artifacts exist AND grep the log for the
+  fallback warning; it goes green over mock/blank pages (#77).
+- Deploying the backend while a frontend build is running.
 - Continuing failed rollbacks blindly.
 - Redeploying services before bumping the layer ARN everywhere.
 - Skipping test-flow after backend deploys.
@@ -104,4 +119,4 @@ chat). CI deploys additionally hit rows 47–51 (OIDC subs, bucket truncation, e
 ## Related
 
 `docs/sop.md`, `docs/pain-points.md` rows 2–11, 18–23, 25–27, 29, 35–37, 41, 47–54,
-58, 61 · pairs with `commit-discipline`, `cognito-auth`.
+58, 61, 77 · pairs with `commit-discipline`, `cognito-auth`, `static-frontend`.
